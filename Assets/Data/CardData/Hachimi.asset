@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588ab353f0eee4e4486194fe8fff53ad, type: 3}
+  m_Name: Hachimi
+  m_EditorClassIdentifier: 
+  cardName: "\u8702\u871C"
+  cost: 1
+  phyDamage: 40
+  menDamage: 20
+  tags: 0200000005000000
+  description: "\u8FD9\u662F\u54C8\u57FA\u7C73"
+  icon: {fileID: 21300000, guid: febe7ffa2fc4708448cac786372f6a3b, type: 3}
