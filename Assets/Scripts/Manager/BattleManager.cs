@@ -31,7 +31,7 @@ public class BattleManager : MonoBehaviour
         switch (currentState)
         {
             case BattleState.Start:
-                // 开始战斗时的逻辑
+                // 开始战斗时的逻辑，初始化牌库，敌人类型和属性、血量等
                 break;
             case BattleState.PlayerTurn:
                 // 玩家回合的逻辑

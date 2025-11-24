@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 588ab353f0eee4e4486194fe8fff53ad, type: 3}
-  m_Name: Beef
+  m_Name: Baked_Potato
   m_EditorClassIdentifier: 
-  cardName: "\u751F\u725B\u8089"
-  cost: 1
-  phyDamage: 30
-  menDamage: -10
+  cardName: "\u70E4\u571F\u8C46"
+  cost: 5
+  phyDamage: 10
+  menDamage: 10
   tags: 03000000
-  description: "\u8FD9\u662F\u725B\u8089"
-  icon: {fileID: 21300000, guid: 8ef3dfd9632cc3346a61e004d34de8d3, type: 3}
+  description: 
+  icon: {fileID: 21300000, guid: d9a03aca0d589284c93378304ab7abd3, type: 3}
