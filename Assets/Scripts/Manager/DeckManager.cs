@@ -12,12 +12,13 @@ public class DeckManager : MonoBehaviour
     public TextMeshProUGUI drawPileText;    // 牌库数量文本
     public TextMeshProUGUI discardPileText; // 弃牌堆数量文本
     public Button DrawButton;
-    public Button DiscardButton;
+    public Button RoundEndButton;
 
     public List<CardData> allCards = new List<CardData>();    // 所有的卡牌（手动填充的卡牌列表）
+    public BattleManager battleManager;
 
     // 更新卡牌数量的显示
-    private void UpdateCardCountDisplay()
+    public void UpdateCardCountDisplay()
     {
         drawPileText.text = "牌堆剩余: " + drawPile.Count;
         discardPileText.text = "弃牌堆: " + discardPile.Count;
@@ -79,27 +80,30 @@ public class DeckManager : MonoBehaviour
     void Start()
     {
         AddCardsToDeck(allCards);  // 添加卡牌到牌库
-        Debug.Log("Cards added to deck: " + drawPile.Count);
-
-        DrawCard(2);  // 自动抽取2张卡牌
-        Debug.Log("Cards drawn to hand: " + handManager.handCards.Count);
-
+        battleManager = FindObjectOfType<BattleManager>();
         DrawButton.GetComponent<Button>().onClick.AddListener(OnDrawButtonClicked);
-        DiscardButton.GetComponent<Button>().onClick.AddListener(OnDiscardButtonClicked);
+        RoundEndButton.GetComponent<Button>().onClick.AddListener(PlayerTurnEnd);
     }
 
     void OnDrawButtonClicked()
     {
         DrawCard(1);
-        UpdateCardCountDisplay() ;
+        UpdateCardCountDisplay();
         Debug.Log("抽了一张牌");
     }
 
-    void OnDiscardButtonClicked()
+    public void PlayerTurnStart()
     {
-        handManager.DiscardAllCard();
+        DrawCard(3);
         UpdateCardCountDisplay();
-        Debug.Log("丢弃所有手牌");
+    }
+
+    public void PlayerTurnEnd()
+    {
+        if ( battleManager.currentState == BattleManager.BattleState.PlayerTurn )
+        {
+            battleManager.ChangeState(BattleManager.BattleState.Resolution);
+        }
     }
 
 }

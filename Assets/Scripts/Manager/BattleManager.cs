@@ -16,8 +16,10 @@ public class BattleManager : MonoBehaviour
 
     public BattleState currentState;
     private DeckManager deckManager;
-    private PotManager potManager;  // 引用 PotManager 用于获取锅中的卡牌
-    private EnemyData enemyData;    // 引用敌人的数据
+    private PotManager potManager;  // 引用 PotManager用于获取锅中的卡牌
+    private HandManager handManager;
+    public List<EnemyData> enemyList = new List<EnemyData>();  // 战斗可选敌人列表
+    private EnemyData currentEnemy;
 
     void Start()
     {
@@ -25,7 +27,18 @@ public class BattleManager : MonoBehaviour
         Debug.Log("Battle Started!");
         deckManager = FindObjectOfType<DeckManager>();
         potManager = FindObjectOfType<PotManager>();
-        enemyData = FindObjectOfType<EnemyData>();   //TODO：改为战斗开始时获取敌人数据
+        handManager = FindObjectOfType<HandManager>();
+        // 随机选择一个敌人
+        if (enemyList.Count > 0)
+        {
+            int randomIndex = Random.Range(0, enemyList.Count);
+            currentEnemy = enemyList[randomIndex];
+            Debug.Log($"Selected Enemy: {currentEnemy.name}");
+        }
+        else
+        {
+            Debug.LogWarning("Enemy list is empty!");
+        }
         ChangeState(BattleState.PlayerTurn);
     }
 
@@ -41,15 +54,16 @@ public class BattleManager : MonoBehaviour
                 // 初始化战斗
                 break;
             case BattleState.PlayerTurn:
-                // 玩家回合
+                PlayerTurn();
                 break;
             case BattleState.Resolution:
                 ResolveBattle();
                 break;
             case BattleState.EnemyTurn:
-                EnemyAttack(enemyData);
+                EnemyAttack(currentEnemy);
                 break;
             case BattleState.EndTurn:
+                RoundEnd();
                 break;
             case BattleState.Win:
                 // 胜利
@@ -61,20 +75,30 @@ public class BattleManager : MonoBehaviour
     }
 
 
+    #region PlayerTurn
+    private void PlayerTurn()
+    {
+        deckManager.PlayerTurnStart();
+        Debug.Log("进入玩家回合");
+    }
+
+    #endregion
+
     #region Resolution
     private void ResolveBattle()
     {
         Debug.Log("Resolution Phase Started");
         // 计算伤害
-        var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, enemyData);
-
-        if (phyDamage >= enemyData.maxPhyHP || menDamage >= enemyData.maxMenHP)     //TODO：改为CurrentHealth，加入血条更新
+        var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
+        if (phyDamage >= currentEnemy.maxPhyHP || menDamage >= currentEnemy.maxMenHP)     //TODO：改为CurrentHealth，加入血条更新
         {
             ChangeState(BattleState.Win);
         }
+        handManager.DiscardAllCard();
+        deckManager.UpdateCardCountDisplay();
+        Debug.Log("回合结束，丢弃所有手牌");
         deckManager.discardPile.AddRange(potManager.cookingPot);
         potManager.ClearPot();
-
         ChangeState(BattleState.EnemyTurn);
     }
 
@@ -139,6 +163,10 @@ public class BattleManager : MonoBehaviour
     #endregion
 
     #region EndTurn
+    private void RoundEnd()
+    {
+        ChangeState(BattleState.PlayerTurn);
+    }
 
 
     #endregion

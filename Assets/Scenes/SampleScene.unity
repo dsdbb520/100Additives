@@ -1303,6 +1303,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 928202316}
   m_CullTransparentMesh: 1
+--- !u!1 &943227392
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 943227394}
+  - component: {fileID: 943227393}
+  m_Layer: 0
+  m_Name: BattleManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &943227393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 943227392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcbe5c6cd7cb95f41ac243579f21b42b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentState: 0
+  enemyList:
+  - {fileID: 11400000, guid: 17ef8ebd712ddd94bb781d73d430a049, type: 2}
+  - {fileID: 11400000, guid: 22ba7f2c8701167489ea50dd9ed4bbe0, type: 2}
+  - {fileID: 11400000, guid: 5eb7e1ba8a581744b930d17bdbb4da17, type: 2}
+--- !u!4 &943227394
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 943227392}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &945208120
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2004,7 +2053,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u5F03   \u724C"
+  m_text: "\u7ED3\u675F\u56DE\u5408"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 673b2ab7527c89e4591e93ccf9314a77, type: 2}
   m_sharedMaterial: {fileID: 9075912066972333598, guid: 673b2ab7527c89e4591e93ccf9314a77, type: 2}
@@ -2686,7 +2735,7 @@ MonoBehaviour:
   drawPileText: {fileID: 20850173}
   discardPileText: {fileID: 1600063607}
   DrawButton: {fileID: 928202318}
-  DiscardButton: {fileID: 1771553346}
+  RoundEndButton: {fileID: 1771553346}
   allCards:
   - {fileID: 11400000, guid: d227b4a1bcb72f94f84699619e5c9cb0, type: 2}
   - {fileID: 11400000, guid: f9047a8f7af8a384298545d2b76b8c5c, type: 2}
@@ -2698,6 +2747,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2abc396b824092d4b89c859f3d5512ad, type: 2}
   - {fileID: 11400000, guid: d227b4a1bcb72f94f84699619e5c9cb0, type: 2}
   - {fileID: 11400000, guid: f9047a8f7af8a384298545d2b76b8c5c, type: 2}
+  battleManager: {fileID: 943227393}
 --- !u!1 &1944661525
 GameObject:
   m_ObjectHideFlags: 0
@@ -3002,5 +3052,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 519420032}
+  - {fileID: 943227394}
   - {fileID: 1712937135}
   - {fileID: 1055403990}
