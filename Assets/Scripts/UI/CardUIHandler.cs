@@ -8,7 +8,6 @@ public class CardUIHandler : MonoBehaviour
     public TextMeshProUGUI cardNameText;   // 显示卡牌名称
     public TextMeshProUGUI costText;       // 显示卡牌费用
     public Image cardIcon;                 // 显示卡牌图标
-
     private PotManager potManager;
     private HandManager handManager;
 
@@ -31,17 +30,49 @@ public class CardUIHandler : MonoBehaviour
 
     void OnCardClicked()
     {
-        if (transform.parent == handManager.handPanel)
+        if (HandManager.isFrozenMode && transform.parent == handManager.handPanel) 
         {
-            // 如果卡牌在手牌面板上，点击后将其加入到锅中
-            potManager.AddCardToPot(cardData, gameObject);
-            handManager.RemoveCardFromHand(cardData);  // 从手牌中移除
+            if (cardData.isFrozen)
+            {
+                // 如果卡牌被冻结，解除冻结
+                UnfreezeCard();
+            }
+            else
+            {
+                FreezeCard();
+            }
         }
-        else if (transform.parent == potManager.potPanel)
+        else if(!HandManager.isFrozenMode)
         {
-            // 如果卡牌在锅面板上，点击后将其移回手牌
-            potManager.RemoveCardFromPot(cardData, gameObject, handManager);
+            if (transform.parent == handManager.handPanel)
+            {
+                potManager.AddCardToPot(cardData, gameObject);
+                handManager.RemoveCardFromHand(cardData);  // 从手牌中移除
+            }
+            else if(transform.parent == potManager.potPanel)
+            {
+                // 如果卡牌在锅面板上，点击后将其移回手牌
+                potManager.RemoveCardFromPot(cardData, gameObject, handManager);
 
+            }
         }
+    }
+
+
+
+
+    // 冻结卡牌
+    public void FreezeCard()
+    {
+        cardData.isFrozen = true; // 设置卡牌为冻结状态
+        GetComponent<Image>().color = Color.cyan;
+        Debug.Log($"Card {cardData.cardName} is frozen.");
+    }
+    // 解冻卡牌
+    public void UnfreezeCard()
+    {
+        cardData.isFrozen = false; // 解除冻结状态
+        GetComponent<Image>().color = new Color(101f / 255f, 97f / 255f, 97f / 255f);
+        Debug.Log($"Card {cardData.cardName} is unfrozen.");
     }
 }

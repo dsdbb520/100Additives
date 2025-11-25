@@ -1,20 +1,41 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
 
 public class HandManager : MonoBehaviour
 {
     public GameObject cardPrefab;  // 卡牌预制体
     public Transform handPanel;    // 手牌容器
     public List<CardData> handCards = new List<CardData>();  // 手牌数据
+    public static bool isFrozenMode = false;  //控制冻结模式
+    public Button freezeButton;  //按钮用于切换冻结模式
+
+
+    private void Start()
+    {
+        freezeButton.onClick.AddListener(ToggleFreezeMode);
+    }
+
+    private void ToggleFreezeMode()
+    {
+        isFrozenMode = !isFrozenMode; //切换状态
+        if (isFrozenMode) freezeButton.image.color = Color.cyan;
+        if (!isFrozenMode) freezeButton.image.color = Color.white;
+        Debug.Log($"Freeze Mode: {isFrozenMode}");
+    }
 
     public void AddCardToHand(CardData cardData)
     {
-        // 实例化卡牌并显示在 UI 上
+        //克隆cardData生成一个新的副本
+        CardData cardClone = cardData.Clone();
+        //实例化卡牌并显示在 UI 上
         GameObject cardObj = Instantiate(cardPrefab, handPanel);
         CardUIHandler cardHandler = cardObj.GetComponent<CardUIHandler>();
-        cardHandler.cardData = cardData;  // 绑定卡牌数据
-
-        handCards.Add(cardData);  // 将卡牌添加到手牌列表
+        cardHandler.cardData = cardClone;  //绑定新的卡牌副本数据
+        handCards.Add(cardClone);  //将克隆后的卡牌添加到手牌列表
+        cardHandler.UnfreezeCard(); //Debug用
+        Debug.Log($"Card {cardClone.cardName} added to hand.");
     }
 
     public void RemoveCardFromHand(CardData cardData)
@@ -24,20 +45,30 @@ public class HandManager : MonoBehaviour
 
     public void DiscardAllCard()
     {
-        // 将所有手牌中的卡牌添加到弃牌堆
+        //临时保存将要丢弃的卡牌
+        List<CardData> cardsToDiscard = new List<CardData>();
         foreach (CardData cardData in handCards)
         {
-            // 添加卡牌到 discardPile
-            FindObjectOfType<DeckManager>().discardPile.Add(cardData);
+            if (!cardData.isFrozen)  //检查卡片是否被冻结
+            {
+                cardsToDiscard.Add(cardData);  //添加到临时列表
+            }
         }
+        // 将所有没有冻结的卡牌添加到弃牌堆
+        FindObjectOfType<DeckManager>().discardPile.AddRange(cardsToDiscard);
 
         // 清空手牌列表
-        handCards.Clear();
+        handCards.RemoveAll(card => !card.isFrozen);
 
-        // 清理手牌 UI 上的卡牌对象
         foreach (Transform card in handPanel)
         {
-            Destroy(card.gameObject);  // 销毁手牌
+            CardUIHandler cardHandler = card.GetComponent<CardUIHandler>();
+            if (cardHandler != null && !cardHandler.cardData.isFrozen)
+            {
+                Destroy(card.gameObject);  // 销毁没有冻结的卡
+            }
         }
     }
+
+
 }

@@ -19,3 +19,4 @@ MonoBehaviour:
   tags: 03000000
   description: 
   icon: {fileID: 21300000, guid: d9a03aca0d589284c93378304ab7abd3, type: 3}
+  isFrozen: 0
