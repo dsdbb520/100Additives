@@ -64,6 +64,11 @@ public class CardUIHandler : MonoBehaviour
     // 冻结卡牌
     public void FreezeCard()
     {
+        if (handManager.GetFrozenCardCount() >= 2) 
+        {
+            FindObjectOfType<FloatingHint>().ShowHint("最多只能冻结两张牌！");
+            return;
+        }
         cardData.isFrozen = true; // 设置卡牌为冻结状态
         GetComponent<Image>().color = Color.cyan;
         Debug.Log($"Card {cardData.cardName} is frozen.");

@@ -15,6 +15,8 @@ public class BattleManager : MonoBehaviour
     }
 
     public BattleState currentState;
+    private float enemyMaxHealth;
+    private float enemyCurrentHealth;
     private DeckManager deckManager;
     private PotManager potManager;  // 引用 PotManager用于获取锅中的卡牌
     private HandManager handManager;
@@ -34,6 +36,8 @@ public class BattleManager : MonoBehaviour
             int randomIndex = Random.Range(0, enemyList.Count);
             currentEnemy = enemyList[randomIndex];
             Debug.Log($"Selected Enemy: {currentEnemy.name}");
+            enemyMaxHealth=currentEnemy.maxPhyHP;
+            enemyCurrentHealth=enemyMaxHealth;
         }
         else
         {
@@ -51,19 +55,19 @@ public class BattleManager : MonoBehaviour
         switch (currentState)
         {
             case BattleState.Start:
-                // 初始化战斗
+                RoundStart();
                 break;
             case BattleState.PlayerTurn:
                 PlayerTurn();
                 break;
-            case BattleState.Resolution:
-                ResolveBattle();
+            case BattleState.EndTurn:
+                RoundEnd();
                 break;
             case BattleState.EnemyTurn:
                 EnemyAttack(currentEnemy);
                 break;
-            case BattleState.EndTurn:
-                RoundEnd();
+            case BattleState.Resolution:
+                ResolveBattle();
                 break;
             case BattleState.Win:
                 // 胜利
@@ -75,6 +79,15 @@ public class BattleManager : MonoBehaviour
     }
 
 
+
+    #region RoundStart
+    private void RoundStart()
+    {
+        ChangeState(BattleState.PlayerTurn);
+    }
+
+    #endregion
+
     #region PlayerTurn
     private void PlayerTurn()
     {
@@ -84,19 +97,34 @@ public class BattleManager : MonoBehaviour
 
     #endregion
 
+    #region EnemyTurn
+    private void EnemyAttack(EnemyData enemy)
+    {
+        Debug.Log("敌人发起了攻击");
+        handManager.DiscardAllCard();
+        deckManager.UpdateCardCountDisplay();
+        Debug.Log("回合结束，丢弃所有手牌");
+        ChangeState(BattleState.Start);
+    }
+
+
+    #endregion
+
     #region Resolution
     private void ResolveBattle()
     {
         Debug.Log("Resolution Phase Started");
         // 计算伤害
         var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
-        if (phyDamage >= currentEnemy.maxPhyHP || menDamage >= currentEnemy.maxMenHP)     //TODO：改为CurrentHealth，加入血条更新
+        if (phyDamage >= enemyCurrentHealth || menDamage >= enemyCurrentHealth)
         {
             ChangeState(BattleState.Win);
         }
-        handManager.DiscardAllCard();
-        deckManager.UpdateCardCountDisplay();
-        Debug.Log("回合结束，丢弃所有手牌");
+        else
+        {
+            enemyCurrentHealth -= phyDamage;
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth, enemyCurrentHealth);
+        }
         deckManager.discardPile.AddRange(potManager.cookingPot);
         potManager.ClearPot();
         ChangeState(BattleState.EnemyTurn);
@@ -152,20 +180,12 @@ public class BattleManager : MonoBehaviour
     }
     #endregion
 
-    #region EnemyTurn
-    private void EnemyAttack(EnemyData enemy)
-    {
-        Debug.Log("敌人发起了攻击");
-        ChangeState(BattleState.EndTurn);
-    }
 
-
-    #endregion
 
     #region EndTurn
     private void RoundEnd()
     {
-        ChangeState(BattleState.PlayerTurn);
+        ChangeState(BattleState.EnemyTurn);
     }
 
 

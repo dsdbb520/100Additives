@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\u751F\u9E21\u8089"
   cost: 3
+  pressure: 60
   phyDamage: 10
   menDamage: 10
   tags: 03000000
   description: "\u829D\u58EB\u9E21\u8089"
   icon: {fileID: 21300000, guid: 799f1d8e73b9c21459d98c256a8cb0fa, type: 3}
+  isFrozen: 0

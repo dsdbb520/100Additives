@@ -6,6 +6,7 @@ public class CardData : ScriptableObject
 {
     public string cardName;
     public int cost;
+    public float pressure;
     public float phyDamage;
     public float menDamage;
     public List<TagType> tags;
@@ -19,6 +20,7 @@ public class CardData : ScriptableObject
         CardData clone = Instantiate(this);  // 克隆 ScriptableObject
         clone.cardName = this.cardName;
         clone.cost = this.cost;
+        clone.pressure = this.pressure;
         clone.phyDamage = this.phyDamage;
         clone.menDamage = this.menDamage;
         clone.tags = new List<TagType>(this.tags);  // 深拷贝 tags 列表

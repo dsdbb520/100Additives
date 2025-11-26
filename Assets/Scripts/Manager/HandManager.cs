@@ -70,5 +70,20 @@ public class HandManager : MonoBehaviour
         }
     }
 
+    public int GetFrozenCardCount()
+    {
+        int frozenCount = 0;
+        //遍历手牌中的每一张卡牌，检查是否被冻结
+        foreach (CardData card in handCards)
+        {
+            if (card.isFrozen)
+            {
+                frozenCount++;
+            }
+        }
+        return frozenCount;
+    }
+
+
 
 }

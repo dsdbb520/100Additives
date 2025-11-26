@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\u70E4\u571F\u8C46"
   cost: 5
+  pressure: 40
   phyDamage: 10
   menDamage: 10
   tags: 03000000
