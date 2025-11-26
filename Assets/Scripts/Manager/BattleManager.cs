@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BattleManager : MonoBehaviour
 {
     public enum BattleState
     {
+        GameStart,
         Start,
         PlayerTurn,
         Resolution,
@@ -15,12 +17,13 @@ public class BattleManager : MonoBehaviour
     }
 
     public BattleState currentState;
+    public List<EnemyData> enemyList = new List<EnemyData>();  // 战斗可选敌人列表
+    public Button RetryButton;
     private float enemyMaxHealth;
     private float enemyCurrentHealth;
     private DeckManager deckManager;
     private PotManager potManager;  // 引用 PotManager用于获取锅中的卡牌
     private HandManager handManager;
-    public List<EnemyData> enemyList = new List<EnemyData>();  // 战斗可选敌人列表
     private EnemyData currentEnemy;
 
     void Start()
@@ -30,20 +33,7 @@ public class BattleManager : MonoBehaviour
         deckManager = FindObjectOfType<DeckManager>();
         potManager = FindObjectOfType<PotManager>();
         handManager = FindObjectOfType<HandManager>();
-        // 随机选择一个敌人
-        if (enemyList.Count > 0)
-        {
-            int randomIndex = Random.Range(0, enemyList.Count);
-            currentEnemy = enemyList[randomIndex];
-            Debug.Log($"Selected Enemy: {currentEnemy.name}");
-            enemyMaxHealth=currentEnemy.maxPhyHP;
-            enemyCurrentHealth=enemyMaxHealth;
-        }
-        else
-        {
-            Debug.LogWarning("Enemy list is empty!");
-        }
-        ChangeState(BattleState.PlayerTurn);
+        ChangeState(BattleState.GameStart);
     }
 
     public void ChangeState(BattleState newState)
@@ -54,6 +44,9 @@ public class BattleManager : MonoBehaviour
         // 根据状态做出不同反应
         switch (currentState)
         {
+            case BattleState.GameStart:
+                GameStart();
+                break;
             case BattleState.Start:
                 RoundStart();
                 break;
@@ -70,7 +63,7 @@ public class BattleManager : MonoBehaviour
                 ResolveBattle();
                 break;
             case BattleState.Win:
-                // 胜利
+                WinTurn();
                 break;
             case BattleState.Lose:
                 // 失败
@@ -80,7 +73,25 @@ public class BattleManager : MonoBehaviour
 
 
 
-    #region RoundStart
+    #region Start
+    private void GameStart()
+    {
+        // 随机选择一个敌人
+        if (enemyList.Count > 0)
+        {
+            int randomIndex = Random.Range(0, enemyList.Count);
+            currentEnemy = enemyList[randomIndex];
+            Debug.Log($"Selected Enemy: {currentEnemy.name}");
+            enemyMaxHealth = currentEnemy.maxPhyHP;
+            enemyCurrentHealth = enemyMaxHealth;
+        }
+        else
+        {
+            Debug.LogWarning("Enemy list is empty!");
+        }
+        ChangeState(BattleState.Start);
+    }
+
     private void RoundStart()
     {
         ChangeState(BattleState.PlayerTurn);
@@ -114,16 +125,40 @@ public class BattleManager : MonoBehaviour
     private void ResolveBattle()
     {
         Debug.Log("Resolution Phase Started");
-        // 计算伤害
-        var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
-        if (phyDamage >= enemyCurrentHealth || menDamage >= enemyCurrentHealth)
+        // 计算压力总和
+        float totalPressure = potManager.UpdateTotalPressure();
+
+        // 判断是否超出 100% 压力
+        bool isExplosion = false;
+        if (totalPressure > 100f)
         {
-            ChangeState(BattleState.Win);
+            //计算超出的压力部分
+            float excessPressure = totalPressure - 100f;
+
+            //计算爆炸概率
+            float explosionChance = Mathf.Clamp(excessPressure / 20f, 0f, 1f);
+
+            //随机判断是否发生爆炸
+            if (UnityEngine.Random.value < explosionChance)
+            {
+                isExplosion = true;
+                FindObjectOfType<FloatingHint>().ShowHint("炸锅咯！");
+            }
         }
-        else
+        if (!isExplosion)
         {
-            enemyCurrentHealth -= phyDamage;
-            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth, enemyCurrentHealth);
+            // 计算伤害
+            var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
+            if (phyDamage >= enemyCurrentHealth || menDamage >= enemyCurrentHealth)
+            {
+                ChangeState(BattleState.Win);
+            }
+            else
+            {
+                enemyCurrentHealth -= phyDamage;
+                FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
+                FindObjectOfType<FloatingHint>().ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
+            }
         }
         deckManager.discardPile.AddRange(potManager.cookingPot);
         potManager.ClearPot();
@@ -188,6 +223,16 @@ public class BattleManager : MonoBehaviour
         ChangeState(BattleState.EnemyTurn);
     }
 
+
+    #endregion
+
+
+    #region Win
+    private void WinTurn()
+    {
+        FindObjectOfType<FloatingHint>().ShowHint("获得胜利！");
+        
+    }
 
     #endregion
 

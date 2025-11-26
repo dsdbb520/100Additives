@@ -12,6 +12,7 @@ public class DeckManager : MonoBehaviour
     public TextMeshProUGUI drawPileText;    // 牌库数量文本
     public TextMeshProUGUI discardPileText; // 弃牌堆数量文本
     public int DrawNumber = 3;   // 玩家摸牌数量
+    public Button openFireButton;
     public Button RoundEndButton;
 
     public List<CardData> allCards = new List<CardData>();    // 所有的卡牌（手动填充的卡牌列表）
@@ -82,8 +83,13 @@ public class DeckManager : MonoBehaviour
         AddCardsToDeck(allCards);  // 添加卡牌到牌库
         battleManager = FindObjectOfType<BattleManager>();
         RoundEndButton.GetComponent<Button>().onClick.AddListener(PlayerTurnEnd);
+        openFireButton.GetComponent<Button>().onClick.AddListener(openFire);
     }
 
+    void openFire()
+    {
+        battleManager.ChangeState(BattleManager.BattleState.Resolution);
+    }
 
     public void PlayerTurnStart()
     {

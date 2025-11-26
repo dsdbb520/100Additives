@@ -6,8 +6,10 @@ using TMPro;
 public class PotManager : MonoBehaviour
 {
     public List<CardData> cookingPot = new List<CardData>();
+
     public Image potPressureFill;
     public Image extraPotPressureFill;
+    public Image extraExtraPotPressureFill;
     public Sprite Green, Yellow, Red;
     public TextMeshProUGUI pressureNum;
     public Transform potPanel;
@@ -24,7 +26,7 @@ public class PotManager : MonoBehaviour
     {
         if (card.isFrozen)
         {
-            Debug.Log($"Card {card.cardName} is frozen and cannot be added to the pot.");
+            FindObjectOfType<FloatingHint>().ShowHint("卡牌被冻结，请先解冻！");
             return; //如果卡牌被冻结，不进入锅
         }
         cookingPot.Add(card);
@@ -44,6 +46,7 @@ public class PotManager : MonoBehaviour
         Debug.Log($"Card {card.cardName} returned to the hand.");
         UpdateTotalPressure();
     }
+
 
     // 清空锅中的所有卡牌
     public void ClearPot()
@@ -77,7 +80,7 @@ public class PotManager : MonoBehaviour
         return null;
     }
 
-    public void UpdateTotalPressure()
+    public float UpdateTotalPressure()
     {
         float totalPressure = 0f;
         //遍历锅中的每张卡牌，累加压力值
@@ -100,9 +103,16 @@ public class PotManager : MonoBehaviour
             extraPotPressureFill.fillAmount = (totalPressure - 200f) / 100f;
             extraPotPressureFill.gameObject.SetActive(true);  //激活额外进度条
         }
-        else
+        else if (totalPressure <= 200)
         {
             extraPotPressureFill.gameObject.SetActive(false);  //压力不超过200时隐藏额外进度条
         }
+        if(totalPressure > 300)
+        {
+            extraExtraPotPressureFill.fillAmount = (totalPressure - 300f) / 100f;
+            extraExtraPotPressureFill.gameObject.SetActive(true);
+        }else
+            extraExtraPotPressureFill.gameObject.SetActive(false);
+        return totalPressure;
     }
 }
