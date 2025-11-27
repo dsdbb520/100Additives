@@ -24,6 +24,7 @@ public class BattleManager : MonoBehaviour
     private DeckManager deckManager;
     private PotManager potManager;  // 引用 PotManager用于获取锅中的卡牌
     private HandManager handManager;
+    private PlayerHealthStars playerHealthStars;
     private EnemyData currentEnemy;
 
     void Start()
@@ -66,7 +67,7 @@ public class BattleManager : MonoBehaviour
                 WinTurn();
                 break;
             case BattleState.Lose:
-                // 失败
+                LoseTurn();
                 break;
         }
     }
@@ -142,7 +143,14 @@ public class BattleManager : MonoBehaviour
             if (UnityEngine.Random.value < explosionChance)
             {
                 isExplosion = true;
-                FindObjectOfType<FloatingHint>().ShowHint("炸锅咯！");
+                int selfDamage = 1 + Mathf.FloorToInt(excessPressure / 10f);
+
+                playerHealthStars.TakeDamage(selfDamage);
+                FindObjectOfType<FloatingHint>().ShowHint($"炸锅了！玩家受到 {selfDamage} 点伤害！");
+            }
+            if(playerHealthStars.currentHealth <= 0)
+            {
+                ChangeState(BattleState.Lose);
             }
         }
         if (!isExplosion)
@@ -227,11 +235,18 @@ public class BattleManager : MonoBehaviour
     #endregion
 
 
-    #region Win
+    #region Win&Lose
     private void WinTurn()
     {
         FindObjectOfType<FloatingHint>().ShowHint("获得胜利！");
+        FindObjectOfType<MapManager>().ReturnToMap();
         
+    }
+
+    private void LoseTurn()
+    {
+        FindObjectOfType<FloatingHint>().ShowHint("获得失败！");
+        FindObjectOfType<MapManager>().ReturnToMap();
     }
 
     #endregion

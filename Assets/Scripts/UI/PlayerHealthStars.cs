@@ -13,16 +13,11 @@ public class PlayerHealthStars : MonoBehaviour
         UpdateHealthStars(); // 初始化星星显示
     }
 
-    private void Update()
-    {
-        UpdateHealthStars();
-    }
 
     // 调用此方法以处理伤害，暂定直接使用加减算法
     public void TakeDamage(float damage)
     {
         currentHealth -= damage;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); // 确保血量在 0 到 maxHealth 之间
         UpdateHealthStars(); // 更新星星显示
     }
 

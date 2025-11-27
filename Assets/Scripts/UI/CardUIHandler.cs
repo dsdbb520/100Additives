@@ -1,8 +1,10 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using DG.Tweening;
 
-public class CardUIHandler : MonoBehaviour
+public class CardUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     public CardData cardData;  // 绑定卡牌数据
     public TextMeshProUGUI cardNameText;   // 显示卡牌名称
@@ -58,8 +60,21 @@ public class CardUIHandler : MonoBehaviour
         }
     }
 
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (transform.parent == handManager.handPanel) //只有在手牌区才放大
+        {
+            transform.DOScale(1.2f, 0.2f);
+        }
+    }
 
-
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (transform.parent == handManager.handPanel)
+        {
+            transform.DOScale(1.0f, 0.2f);
+        }
+    }
 
     // 冻结卡牌
     public void FreezeCard()
