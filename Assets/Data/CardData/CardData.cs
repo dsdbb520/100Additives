@@ -10,6 +10,7 @@ public class CardData : ScriptableObject
     public float phyDamage;
     public float menDamage;
     public List<TagType> tags;
+    public List<HideTagType> hideTags;
     public string description;
     public Sprite icon;
     public bool isFrozen;
@@ -24,6 +25,7 @@ public class CardData : ScriptableObject
         clone.phyDamage = this.phyDamage;
         clone.menDamage = this.menDamage;
         clone.tags = new List<TagType>(this.tags);  // Éî¿½±´ tags ÁÐ±í
+        clone.hideTags = new List<HideTagType>(this.hideTags);
         clone.description = this.description;
         clone.icon = this.icon;
         clone.isFrozen = this.isFrozen;

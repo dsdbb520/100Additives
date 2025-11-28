@@ -7,3 +7,13 @@ public enum TagType
     Toxic,
     Liquid
 }
+
+public enum HideTagType
+{
+    None,
+    Spicy,
+    Sweet,
+    Hard,
+    Toxic,
+    Liquid
+}

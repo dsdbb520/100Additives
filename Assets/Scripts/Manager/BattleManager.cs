@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,15 +28,7 @@ public class BattleManager : MonoBehaviour
     private PlayerHealthStars playerHealthStars;
     private EnemyData currentEnemy;
 
-    void Start()
-    {
-        currentState = BattleState.Start;
-        Debug.Log("Battle Started!");
-        deckManager = FindObjectOfType<DeckManager>();
-        potManager = FindObjectOfType<PotManager>();
-        handManager = FindObjectOfType<HandManager>();
-        ChangeState(BattleState.GameStart);
-    }
+
 
     public void ChangeState(BattleState newState)
     {
@@ -77,6 +70,16 @@ public class BattleManager : MonoBehaviour
     #region Start
     private void GameStart()
     {
+        Debug.Log("Battle Started!");
+        deckManager = FindObjectOfType<DeckManager>();
+        potManager = FindObjectOfType<PotManager>();
+        handManager = FindObjectOfType<HandManager>();
+        playerHealthStars = FindObjectOfType<PlayerHealthStars>();
+        handManager.DiscardAllCard(true);
+        potManager.ClearPot();
+        deckManager.ResetDeck();
+        potManager.UpdateTotalPressure();
+        FloatingHint.Instance.ClearAllHints();
         // 随机选择一个敌人
         if (enemyList.Count > 0)
         {
@@ -85,6 +88,8 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"Selected Enemy: {currentEnemy.name}");
             enemyMaxHealth = currentEnemy.maxPhyHP;
             enemyCurrentHealth = enemyMaxHealth;
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
+
         }
         else
         {
@@ -95,6 +100,7 @@ public class BattleManager : MonoBehaviour
 
     private void RoundStart()
     {
+        deckManager.PlayerTurnStart();
         ChangeState(BattleState.PlayerTurn);
     }
 
@@ -103,8 +109,7 @@ public class BattleManager : MonoBehaviour
     #region PlayerTurn
     private void PlayerTurn()
     {
-        deckManager.PlayerTurnStart();
-        Debug.Log("进入玩家回合");
+        Debug.Log("进入玩家回合 (等待操作)");
     }
 
     #endregion
@@ -112,10 +117,15 @@ public class BattleManager : MonoBehaviour
     #region EnemyTurn
     private void EnemyAttack(EnemyData enemy)
     {
+        StartCoroutine(EnemyTurnCoroutine(enemy));
+    }
+    private IEnumerator EnemyTurnCoroutine(EnemyData enemy)
+    {
         Debug.Log("敌人发起了攻击");
         handManager.DiscardAllCard();
         deckManager.UpdateCardCountDisplay();
-        Debug.Log("回合结束，丢弃所有手牌");
+        FloatingHint.Instance.ShowHint("回合结束，丢弃所有手牌！");
+        yield return new WaitForSeconds(0.5f);
         ChangeState(BattleState.Start);
     }
 
@@ -125,7 +135,14 @@ public class BattleManager : MonoBehaviour
     #region Resolution
     private void ResolveBattle()
     {
+        StartCoroutine(ResolveBattleCoroutine());
+    }
+    private IEnumerator ResolveBattleCoroutine()
+    {
         Debug.Log("Resolution Phase Started");
+        FloatingHint.Instance.ShowHint("开始煮菜！");
+        yield return new WaitForSeconds(1.0f);
+
         // 计算压力总和
         float totalPressure = potManager.UpdateTotalPressure();
 
@@ -146,11 +163,13 @@ public class BattleManager : MonoBehaviour
                 int selfDamage = 1 + Mathf.FloorToInt(excessPressure / 10f);
 
                 playerHealthStars.TakeDamage(selfDamage);
-                FindObjectOfType<FloatingHint>().ShowHint($"炸锅了！玩家受到 {selfDamage} 点伤害！");
+                FloatingHint.Instance.ShowHint($"炸锅了！玩家受到 {selfDamage} 点伤害！");
             }
             if(playerHealthStars.currentHealth <= 0)
             {
+                yield return new WaitForSeconds(1.0f);
                 ChangeState(BattleState.Lose);
+                yield break;
             }
         }
         if (!isExplosion)
@@ -159,18 +178,23 @@ public class BattleManager : MonoBehaviour
             var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
             if (phyDamage >= enemyCurrentHealth || menDamage >= enemyCurrentHealth)
             {
+                FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(0, 0);
+                FloatingHint.Instance.ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
+                yield return new WaitForSeconds(1.0f);
                 ChangeState(BattleState.Win);
+                yield break;
             }
             else
             {
                 enemyCurrentHealth -= phyDamage;
                 FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
-                FindObjectOfType<FloatingHint>().ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
+                FloatingHint.Instance.ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
             }
         }
+        yield return new WaitForSeconds(1.0f);
         deckManager.discardPile.AddRange(potManager.cookingPot);
         potManager.ClearPot();
-        ChangeState(BattleState.EnemyTurn);
+        ChangeState(BattleState.PlayerTurn);
     }
 
     // 计算总伤害
@@ -238,14 +262,14 @@ public class BattleManager : MonoBehaviour
     #region Win&Lose
     private void WinTurn()
     {
-        FindObjectOfType<FloatingHint>().ShowHint("获得胜利！");
+        FloatingHint.Instance.ShowHint("获得胜利！");
         FindObjectOfType<MapManager>().ReturnToMap();
         
     }
 
     private void LoseTurn()
     {
-        FindObjectOfType<FloatingHint>().ShowHint("获得失败！");
+        FloatingHint.Instance.ShowHint("获得失败！");
         FindObjectOfType<MapManager>().ReturnToMap();
     }
 

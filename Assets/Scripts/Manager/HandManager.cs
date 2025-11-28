@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
+using DG.Tweening;
 
 public class HandManager : MonoBehaviour
 {
@@ -34,7 +35,11 @@ public class HandManager : MonoBehaviour
         CardUIHandler cardHandler = cardObj.GetComponent<CardUIHandler>();
         cardHandler.cardData = cardClone;  //绑定新的卡牌副本数据
         handCards.Add(cardClone);  //将克隆后的卡牌添加到手牌列表
-        cardHandler.UnfreezeCard(); //Debug用
+        cardHandler.UnfreezeCard();
+        cardObj.transform.localScale = Vector3.zero;
+        cardObj.transform.DOScale(Vector3.one, 0.4f)        //增加卡牌出现的动画
+            .SetEase(Ease.OutBack)
+            .SetLink(cardObj);
         Debug.Log($"Card {cardClone.cardName} added to hand.");
     }
 
@@ -43,7 +48,7 @@ public class HandManager : MonoBehaviour
         handCards.Remove(cardData);
     }
 
-    public void DiscardAllCard()
+    public void DiscardAllCard(bool isInstant = false)
     {
         //临时保存将要丢弃的卡牌
         List<CardData> cardsToDiscard = new List<CardData>();
@@ -60,12 +65,28 @@ public class HandManager : MonoBehaviour
         // 清空手牌列表
         handCards.RemoveAll(card => !card.isFrozen);
 
-        foreach (Transform card in handPanel)
+        for (int i = handPanel.childCount - 1; i >= 0; i--)
         {
-            CardUIHandler cardHandler = card.GetComponent<CardUIHandler>();
+            Transform cardTrans = handPanel.GetChild(i);
+            CardUIHandler cardHandler = cardTrans.GetComponent<CardUIHandler>();
+
             if (cardHandler != null && !cardHandler.cardData.isFrozen)
             {
-                Destroy(card.gameObject);  // 销毁没有冻结的卡
+                if (isInstant)
+                {
+                    Destroy(cardTrans.gameObject);
+                }
+                else
+                {
+                    cardTrans.SetParent(handPanel.parent, true);
+
+                    float targetX = Screen.width + 200f;
+
+                    cardTrans.DOMoveX(targetX, 0.4f)
+                        .SetEase(Ease.InQuad)
+                        .OnComplete(() => Destroy(cardTrans.gameObject))
+                        .SetLink(cardTrans.gameObject);
+                }
             }
         }
     }

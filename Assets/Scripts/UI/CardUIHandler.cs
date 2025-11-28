@@ -81,7 +81,7 @@ public class CardUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         if (handManager.GetFrozenCardCount() >= 2) 
         {
-            FindObjectOfType<FloatingHint>().ShowHint("最多只能冻结两张牌！");
+            FloatingHint.Instance.ShowHint("最多只能冻结两张牌！");
             return;
         }
         cardData.isFrozen = true; // 设置卡牌为冻结状态

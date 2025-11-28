@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 public class FloatingHint : MonoBehaviour
 {
+    public static FloatingHint Instance { get; private set; }
     public GameObject hintPrefab;  // 用来实例化提示的预制体
     public Transform hintContainer;  // 存放所有提示的容器
     public float displayDuration = 2f;  // 提示显示的持续时间
@@ -13,6 +14,18 @@ public class FloatingHint : MonoBehaviour
 
     private List<GameObject> activeHints = new List<GameObject>();  // 存储所有当前显示的提示
 
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     // 显示提示的函数
     public void ShowHint(string text)
     {
@@ -42,31 +55,40 @@ public class FloatingHint : MonoBehaviour
     // 控制提示显示、渐显、隐藏的协程
     private IEnumerator DisplayHintCoroutine(GameObject hint, CanvasGroup canvasGroup, RectTransform hintRect)
     {
-        // 渐显
+        // --- 渐显阶段 ---
         float elapsedTime = 0f;
         while (elapsedTime < fadeDuration)
         {
+            if (hint == null) yield break;
+
             canvasGroup.alpha = Mathf.Lerp(0, 1, elapsedTime / fadeDuration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-        canvasGroup.alpha = 1;  // 确保完全显示
 
-        // 等待提示持续时间
+        if (hint == null) yield break; // 再检查一次
+        canvasGroup.alpha = 1;
+
         yield return new WaitForSeconds(displayDuration);
 
-        // 渐隐
+        // --- 渐隐阶段 ---
         elapsedTime = 0f;
         while (elapsedTime < fadeDuration)
         {
+            if (hint == null) yield break;
+
             canvasGroup.alpha = Mathf.Lerp(1, 0, elapsedTime / fadeDuration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-        canvasGroup.alpha = 0;  // 确保完全隐藏
 
-        // 提示消失后清理
-        activeHints.Remove(hint);
+        if (hint == null) yield break;
+        canvasGroup.alpha = 0;
+
+        if (activeHints.Contains(hint))
+        {
+            activeHints.Remove(hint);
+        }
         Destroy(hint);
     }
 
@@ -94,5 +116,9 @@ public class FloatingHint : MonoBehaviour
             Destroy(hint);
         }
         activeHints.Clear();
+    }
+    private void OnDisable()
+    {
+        ClearAllHints();
     }
 }

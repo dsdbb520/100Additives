@@ -26,7 +26,7 @@ public class PotManager : MonoBehaviour
     {
         if (card.isFrozen)
         {
-            FindObjectOfType<FloatingHint>().ShowHint("卡牌被冻结，请先解冻！");
+            FloatingHint.Instance.ShowHint("卡牌被冻结，请先解冻！");
             return; //如果卡牌被冻结，不进入锅
         }
         cookingPot.Add(card);

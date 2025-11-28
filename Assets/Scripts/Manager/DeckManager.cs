@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;   
 using System.Collections.Generic;
 using UnityEngine.UI;
 
@@ -48,11 +49,14 @@ public class DeckManager : MonoBehaviour
     // 抽取卡牌
     public void DrawCard(int count)
     {
+        StartCoroutine(DrawCardsWithDelay(count));
+    }
+    IEnumerator DrawCardsWithDelay(int count)
+    {
         for (int i = 0; i < count; i++)
         {
             if (drawPile.Count == 0)
             {
-                // 如果抽牌堆为空，将弃牌堆重新洗入抽牌堆，并清空弃牌堆
                 drawPile.AddRange(discardPile);
                 discardPile.Clear();
                 UpdateCardCountDisplay();
@@ -60,17 +64,23 @@ public class DeckManager : MonoBehaviour
                 Shuffle();
                 if (drawPile.Count == 0)
                 {
-                    FindObjectOfType<FloatingHint>().ShowHint("牌堆为空，请先弃牌！");
+                    FindObjectOfType<FloatingHint>().ShowHint("牌堆为空！");
+                    yield break;
                 }
             }
-
             if (drawPile.Count > 0)
             {
-                // 抽取卡牌
                 CardData card = drawPile[0];
                 drawPile.RemoveAt(0);
-                // 把卡牌添加到手牌并实例化
+
+                // 发一张牌
                 handManager.AddCardToHand(card);
+
+                // 更新文字显示
+                UpdateCardCountDisplay();
+
+                // 【关键】暂停 0.2 秒再发下一张，制造节奏感
+                yield return new WaitForSeconds(0.4f);
             }
         }
 
@@ -80,10 +90,21 @@ public class DeckManager : MonoBehaviour
     // 游戏开始时初始化
     void Awake()
     {
-        AddCardsToDeck(allCards);  // 添加卡牌到牌库
         battleManager = FindObjectOfType<BattleManager>();
         RoundEndButton.GetComponent<Button>().onClick.AddListener(PlayerTurnEnd);
         openFireButton.GetComponent<Button>().onClick.AddListener(openFire);
+    }
+
+    public void ResetDeck()
+    {
+        drawPile.Clear();
+        discardPile.Clear();
+
+        //重新把所有牌加进去
+        AddCardsToDeck(allCards);
+
+        UpdateCardCountDisplay();
+        Debug.Log("牌库已重置");
     }
 
     void openFire()

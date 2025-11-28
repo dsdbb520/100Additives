@@ -17,6 +17,7 @@ public class MapNode
     public int layerIndex; //第几层
     public int nodeIndex;  //这一层的第几个
     public NodeType type;  //节点类型
+    public bool isCleared = false;
     [System.NonSerialized]
     public List<MapNode> nextNodes = new List<MapNode>(); //下一层节点
 
