@@ -1,30 +1,77 @@
 using UnityEngine;
 using UnityEngine.UI;
-
+using TMPro;
 public class PlayerHealthStars : MonoBehaviour
 {
-    public Image[] healthStars;  // 存储五颗星星的数组
-    public float currentHealth;  // 当前血量（0-100）
-    public float maxHealth = 100;  // 最大血量
+    public Image[] healthStars;
+    public float currentHealth;
+    public float maxHealth = 100;
+
+    public float currentShield = 0;
+    public GameObject shieldGroup;
+    public TextMeshProUGUI shieldText;
 
     void Start()
     {
-        currentHealth = maxHealth; //Debug用
-        UpdateHealthStars(); // 初始化星星显示
+        currentHealth = maxHealth;
+        UpdateHealthStars();
+        ClearShield();
     }
 
 
-    // 调用此方法以处理伤害，暂定直接使用加减算法
     public void TakeDamage(float damage)
     {
-        currentHealth -= damage;
-        UpdateHealthStars(); // 更新星星显示
+        if (currentShield > 0)
+        {
+            if (currentShield >= damage)
+            {
+                currentShield -= damage;
+                damage = 0; //护盾完全抵消伤害
+            }
+            else
+            {
+                damage -= currentShield; //伤害溢出
+                currentShield = 0;
+            }
+            UpdateShieldUI();
+        }
+        //护盾不够再扣血
+        if (damage > 0)
+        {
+            currentHealth -= damage;
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            UpdateHealthStars();
+        }
     }
 
-    // 更新五颗星星的显示
+    public void AddShield(float amount)
+    {
+        currentShield += amount;
+        UpdateShieldUI();
+    }
+
+    public void ClearShield()
+    {
+        currentShield = 0;
+        UpdateShieldUI();
+    }
+
+    private void UpdateShieldUI()
+    {
+        if (currentShield > 0)
+        {
+            shieldGroup.SetActive(true); // 有盾就显示
+            shieldText.text = currentShield.ToString();
+        }
+        else
+        {
+            shieldGroup.SetActive(false); // 没盾就隐藏
+        }
+    }
+
+    //更新血量显示
     void UpdateHealthStars()
     {
-        // 计算血量对应的星星填充比例
         float healthPercentage = currentHealth / maxHealth;
         int fullStarsCount = Mathf.FloorToInt(healthPercentage * healthStars.Length);  // 满星个数
         float remainingHealthPercentage = healthPercentage * healthStars.Length - fullStarsCount;

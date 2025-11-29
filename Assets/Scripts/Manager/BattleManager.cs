@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,10 +24,16 @@ public class BattleManager : MonoBehaviour
     private float enemyMaxHealth;
     private float enemyCurrentHealth;
     private DeckManager deckManager;
-    private PotManager potManager;  // 引用 PotManager用于获取锅中的卡牌
+    private PotManager potManager;
     private HandManager handManager;
+    private SmallStoveManager smallStoveManager;
     private PlayerHealthStars playerHealthStars;
     private EnemyData currentEnemy;
+
+    [Header("Energy System")]
+    public int maxEnergy = 3;     //每回合最大费用
+    public int currentEnergy;     //当前费用
+    public TextMeshProUGUI energyText;
 
 
 
@@ -74,7 +81,9 @@ public class BattleManager : MonoBehaviour
         deckManager = FindObjectOfType<DeckManager>();
         potManager = FindObjectOfType<PotManager>();
         handManager = FindObjectOfType<HandManager>();
+        smallStoveManager = FindObjectOfType<SmallStoveManager>();
         playerHealthStars = FindObjectOfType<PlayerHealthStars>();
+        playerHealthStars.ClearShield();
         handManager.DiscardAllCard(true);
         potManager.ClearPot();
         deckManager.ResetDeck();
@@ -101,6 +110,9 @@ public class BattleManager : MonoBehaviour
     private void RoundStart()
     {
         deckManager.PlayerTurnStart();
+        currentEnergy = maxEnergy;
+        if (smallStoveManager != null)smallStoveManager.ResetStove();
+        UpdateEnergyUI();
         ChangeState(BattleState.PlayerTurn);
     }
 
@@ -140,8 +152,12 @@ public class BattleManager : MonoBehaviour
     private IEnumerator ResolveBattleCoroutine()
     {
         Debug.Log("Resolution Phase Started");
+
         FloatingHint.Instance.ShowHint("开始煮菜！");
         yield return new WaitForSeconds(1.0f);
+
+        StartCoroutine(potManager.PlayCookingAnimation(2.5f));
+        yield return new WaitForSeconds(2.5f);
 
         // 计算压力总和
         float totalPressure = potManager.UpdateTotalPressure();
@@ -189,6 +205,12 @@ public class BattleManager : MonoBehaviour
                 enemyCurrentHealth -= phyDamage;
                 FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
                 FloatingHint.Instance.ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
+            }
+            int shieldGain = potManager.cookingPot.Count;
+            if (shieldGain > 0)
+            {
+                playerHealthStars.AddShield(shieldGain);
+                FloatingHint.Instance.ShowHint($"获得 {shieldGain} 点护盾！");
             }
         }
         yield return new WaitForSeconds(1.0f);
@@ -263,6 +285,7 @@ public class BattleManager : MonoBehaviour
     private void WinTurn()
     {
         FloatingHint.Instance.ShowHint("获得胜利！");
+        playerHealthStars.ClearShield();
         FindObjectOfType<MapManager>().ReturnToMap();
         
     }
@@ -270,9 +293,34 @@ public class BattleManager : MonoBehaviour
     private void LoseTurn()
     {
         FloatingHint.Instance.ShowHint("获得失败！");
+        playerHealthStars.ClearShield();
         FindObjectOfType<MapManager>().ReturnToMap();
     }
 
     #endregion
+
+    public void UpdateEnergyUI()
+    {
+        if (energyText != null)
+        {
+            energyText.text = $"{currentEnergy}/{maxEnergy}";
+        }
+    }
+
+
+    //尝试消耗费用，用于检测当前费用是否足够
+    public bool TryUseEnergy(int amount)
+    {
+        if (currentEnergy >= amount)
+        {
+            currentEnergy -= amount;
+            UpdateEnergyUI();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
 }

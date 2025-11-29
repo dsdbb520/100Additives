@@ -102,14 +102,21 @@ public class DeckManager : MonoBehaviour
 
         //重新把所有牌加进去
         AddCardsToDeck(allCards);
-
+        Shuffle();
         UpdateCardCountDisplay();
         Debug.Log("牌库已重置");
     }
 
     void openFire()
     {
-        battleManager.ChangeState(BattleManager.BattleState.Resolution);
+        if (battleManager.TryUseEnergy(3))
+        {
+            battleManager.ChangeState(BattleManager.BattleState.Resolution);
+        }
+        else
+        {
+            FloatingHint.Instance.ShowHint("费用不足！需要 3 点费用来开锅！");
+        }
     }
 
     public void PlayerTurnStart()

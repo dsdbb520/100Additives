@@ -17,3 +17,8 @@ public enum HideTagType
     Toxic,
     Liquid
 }
+
+public enum BuffType
+{
+
+}

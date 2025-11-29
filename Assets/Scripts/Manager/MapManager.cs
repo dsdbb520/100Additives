@@ -8,6 +8,7 @@ public class MapManager : MonoBehaviour
 {
     public GameObject mapPanel;
     public GameObject battlePanel;
+    public RestManager restManager;
     public GameObject nodeButtonPrefab;
     public RectTransform nodesContainer;
     private MapNode currentNode;
@@ -87,14 +88,40 @@ public class MapManager : MonoBehaviour
 
         currentNode = node;
         Debug.Log($"进入节点: {node.type}");
+        currentNode = node;
+
         if (node.type == NodeType.Battle || node.type == NodeType.Boss)
         {
             EnterBattle();
         }
+        else if (node.type == NodeType.Rest)
+        {
+            mapPanel.SetActive(false);
+            restManager.OpenRestSite();
+        }
         else
         {
-            //非战斗节点（休息、商店等）：直接在地图上自动结算
             StartCoroutine(ProcessNonBattleNode(node));
+        }
+    }
+
+    public void FinishCurrentNode()
+    {
+        battlePanel.SetActive(false);
+        mapPanel.SetActive(true);
+        if (currentNode != null)
+        {
+            currentNode.isCleared = true;
+            UpdateNodeVisuals();
+
+            int nextLayer = currentNode.layerIndex + 1;
+            unlockedLayerIndex = nextLayer;
+
+            if (nextLayer < 5)
+            {
+                FocusOnLayer(nextLayer);
+            }
+            currentNode = null;
         }
     }
 
@@ -107,20 +134,7 @@ public class MapManager : MonoBehaviour
 
     public void ReturnToMap() //战斗胜利后调用
     {
-        battlePanel.SetActive(false);
-        mapPanel.SetActive(true);
-        if (currentNode != null)
-        {
-            currentNode.isCleared = true;
-            UpdateNodeVisuals(); // 刷新一下UI显示
-        }
-        int nextLayer = currentNode.layerIndex + 1;
-        unlockedLayerIndex = nextLayer;
-        if (nextLayer < 5)
-        {
-            FocusOnLayer(nextLayer);
-        }
-        currentNode = null;
+        FinishCurrentNode();
     }
 
     System.Collections.IEnumerator ProcessNonBattleNode(MapNode node)

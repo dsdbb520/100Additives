@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine.UI;
@@ -114,5 +115,63 @@ public class PotManager : MonoBehaviour
         }else
             extraExtraPotPressureFill.gameObject.SetActive(false);
         return totalPressure;
+    }
+
+
+    public IEnumerator PlayCookingAnimation(float duration = 2.0f)
+    {
+        List<GameObject> cardObjs = new List<GameObject>();
+        List<CanvasGroup> cardCGs = new List<CanvasGroup>();
+
+        foreach (var card in cookingPot)
+        {
+            GameObject obj = GetCardObject(card);
+            if (obj != null)
+            {
+                cardObjs.Add(obj);
+
+                CanvasGroup canvasGroup = obj.GetComponent<CanvasGroup>();
+                if (canvasGroup == null) canvasGroup = obj.AddComponent<CanvasGroup>();
+                cardCGs.Add(canvasGroup);
+
+                obj.transform.DOKill();
+
+                //移动到锅中心
+                obj.transform.DOLocalMove(Vector3.zero, 0.5f).SetEase(Ease.OutQuad);
+                //随机旋转
+                obj.transform.DORotate(new Vector3(0, 0, Random.Range(-30f, 30f)), 0.5f);
+            }
+        }
+
+        yield return new WaitForSeconds(0.5f);
+        float shakeDuration = duration - 1.0f;
+        float elapsed = 0f;
+
+        while (elapsed < shakeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / shakeDuration;
+
+            //震动强度曲线：前期弱，后期呈指数级增强
+            float currentStrength = Mathf.Lerp(5f, 50f, progress * progress);
+            foreach (var obj in cardObjs)
+            {
+                if (obj != null)
+                {
+                    //随机偏移
+                    Vector3 randomOffset = (Vector3)UnityEngine.Random.insideUnitCircle * currentStrength;
+                    obj.transform.localPosition = randomOffset;
+                }
+            }
+            yield return null;
+        }
+        foreach (var canvasGroup in cardCGs)
+        {
+            if (canvasGroup != null)
+            {
+                canvasGroup.DOFade(0f, 0.5f).SetEase(Ease.InQuad);
+            }
+        }
+        yield return new WaitForSeconds(0.5f); //等待完全消失
     }
 }

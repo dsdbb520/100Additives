@@ -9,6 +9,9 @@ public class CardData : ScriptableObject
     public float pressure;
     public float phyDamage;
     public float menDamage;
+    public float healValue;
+    public float shieldValue;
+    public List<BuffType> buffs;
     public List<TagType> tags;
     public List<HideTagType> hideTags;
     public string description;
@@ -24,6 +27,9 @@ public class CardData : ScriptableObject
         clone.pressure = this.pressure;
         clone.phyDamage = this.phyDamage;
         clone.menDamage = this.menDamage;
+        clone.healValue = this.healValue;
+        clone.shieldValue = this.shieldValue;
+        clone.buffs = this.buffs;
         clone.tags = new List<TagType>(this.tags);  // Éî¿½±´ tags ÁÐ±í
         clone.hideTags = new List<HideTagType>(this.hideTags);
         clone.description = this.description;
