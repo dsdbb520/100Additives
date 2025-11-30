@@ -17,3 +17,29 @@ MonoBehaviour:
   maxMenHP: 100
   weaknessTags: 0100000004000000
   resistTags: 0200000003000000
+  actions:
+  - actionName: "\u653B\u51FB"
+    intentType: 0
+    value: 10
+    description: "\u8FDB\u884C\u653B\u51FB"
+    statusCard: {fileID: 0}
+    weight: 0
+  - actionName: "\u810F\u5361"
+    intentType: 4
+    value: 1
+    description: "\u5F80\u4F60\u724C\u5806\u91CC\u4E22\u5783\u573E"
+    statusCard: {fileID: 11400000, guid: 859e4aa57da74c44ab354fd6e403853d, type: 2}
+    weight: 0
+  - actionName: "\u529B\u91CF"
+    intentType: 2
+    value: 10
+    description: "\u7ED9\u81EA\u5DF1\u4E0A\u529B\u91CFbuff"
+    statusCard: {fileID: 0}
+    weight: 0
+  - actionName: "\u9632\u5FA1"
+    intentType: 1
+    value: 10
+    description: "\u7ED9\u81EA\u5DF1\u4E0A\u62A4\u76FE"
+    statusCard: {fileID: 0}
+    weight: 0
+  isSequential: 1

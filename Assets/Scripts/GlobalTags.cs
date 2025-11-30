@@ -22,3 +22,13 @@ public enum BuffType
 {
 
 }
+
+public enum EnemyIntentType
+{
+    Attack,
+    Defend,
+    Buff,
+    Debuff,
+    Special, 
+    Unknown 
+}

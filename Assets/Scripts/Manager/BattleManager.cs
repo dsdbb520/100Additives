@@ -26,6 +26,7 @@ public class BattleManager : MonoBehaviour
     private DeckManager deckManager;
     private PotManager potManager;
     private HandManager handManager;
+    private EnemyActionManager enemyActionManager;
     private SmallStoveManager smallStoveManager;
     private PlayerHealthStars playerHealthStars;
     private EnemyData currentEnemy;
@@ -82,6 +83,7 @@ public class BattleManager : MonoBehaviour
         potManager = FindObjectOfType<PotManager>();
         handManager = FindObjectOfType<HandManager>();
         smallStoveManager = FindObjectOfType<SmallStoveManager>();
+        enemyActionManager = FindObjectOfType<EnemyActionManager>();
         playerHealthStars = FindObjectOfType<PlayerHealthStars>();
         playerHealthStars.ClearShield();
         handManager.DiscardAllCard(true);
@@ -95,6 +97,7 @@ public class BattleManager : MonoBehaviour
             int randomIndex = Random.Range(0, enemyList.Count);
             currentEnemy = enemyList[randomIndex];
             Debug.Log($"Selected Enemy: {currentEnemy.name}");
+            enemyActionManager.InitEnemy(currentEnemy);
             enemyMaxHealth = currentEnemy.maxPhyHP;
             enemyCurrentHealth = enemyMaxHealth;
             FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
@@ -133,11 +136,13 @@ public class BattleManager : MonoBehaviour
     }
     private IEnumerator EnemyTurnCoroutine(EnemyData enemy)
     {
-        Debug.Log("敌人发起了攻击");
+        enemyActionManager.ExecuteAction();
+        yield return new WaitForSeconds(1.0f);
         handManager.DiscardAllCard();
         deckManager.UpdateCardCountDisplay();
         FloatingHint.Instance.ShowHint("回合结束，丢弃所有手牌！");
         yield return new WaitForSeconds(0.5f);
+        enemyActionManager.PlanNextAction();
         ChangeState(BattleState.Start);
     }
 
@@ -234,12 +239,12 @@ public class BattleManager : MonoBehaviour
             float menDamage = CalculateDamage(card.menDamage, card.tags, enemy);
             totalMenDamage += menDamage;
         }
-
-        // 输出总伤害
+        float finalPhy = enemyActionManager.TakeDamage(totalPhyDamage);
+        float finalMen = enemyActionManager.TakeDamage(totalMenDamage); //护盾通用
         Debug.Log($"Total Physical Damage: {totalPhyDamage}");
         Debug.Log($"Total Mental Damage: {totalMenDamage}");
+        return (finalPhy, finalMen);
 
-        return (totalPhyDamage, totalMenDamage);
     }
 
     // 计算单个卡牌的伤害
