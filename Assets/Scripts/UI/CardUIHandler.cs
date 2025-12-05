@@ -106,6 +106,17 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             if (battleManager.TryUseEnergy(cardData.cost))
             {
+                //检测卡牌是否为“消耗”
+                if (cardData.buffs.Contains(BuffType.Exhaust))
+                {
+                    handManager.RemoveCardFromHand(cardData);
+                    Destroy(gameObject); //销毁卡牌物体
+
+                    FloatingHint.Instance.ShowHint("卡牌已消耗！");
+
+                    isDragging = false;
+                    return;
+                }
                 potManager.AddCardToPot(cardData, gameObject);
                 handManager.RemoveCardFromHand(cardData);
                 isDragging = false;

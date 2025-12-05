@@ -20,7 +20,8 @@ public enum HideTagType
 
 public enum BuffType
 {
-
+    DrawPressure, //抽到时增加压力
+    Exhaust       //打出后消耗/移除游戏
 }
 
 public enum EnemyIntentType

@@ -14,6 +14,7 @@ public class PotManager : MonoBehaviour
     public Sprite Green, Yellow, Red;
     public TextMeshProUGUI pressureNum;
     public Transform potPanel;
+    private float temporaryPressure = 0f;
 
     private void Start()
     {
@@ -63,6 +64,7 @@ public class PotManager : MonoBehaviour
         }
         // 清空锅的卡牌列表
         cookingPot.Clear();
+        temporaryPressure = 0;
         UpdateTotalPressure();
         Debug.Log("All cards cleared from the pot.");
     }
@@ -81,9 +83,21 @@ public class PotManager : MonoBehaviour
         return null;
     }
 
+
+    //直接增加压力
+    public void AddDirectPressure(float amount)
+    {
+        temporaryPressure += amount;
+        UpdateTotalPressure();
+
+        //视觉反馈
+        if (amount > 0)
+            FloatingHint.Instance.ShowHint($"压力激增 +{amount}% !");
+    }
+
     public float UpdateTotalPressure()
     {
-        float totalPressure = 0f;
+        float totalPressure = temporaryPressure;
         //遍历锅中的每张卡牌，累加压力值
         foreach (var card in cookingPot)
         {

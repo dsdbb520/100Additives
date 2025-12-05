@@ -18,6 +18,7 @@ public class DeckManager : MonoBehaviour
 
     public List<CardData> allCards = new List<CardData>();    // 所有的卡牌（手动填充的卡牌列表）
     public BattleManager battleManager;
+    public PotManager potManager;
 
     // 更新卡牌数量的显示
     public void UpdateCardCountDisplay()
@@ -76,10 +77,19 @@ public class DeckManager : MonoBehaviour
                 // 发一张牌
                 handManager.AddCardToHand(card);
 
-                // 更新文字显示
+                //触发DrawPressure Buff
+                if (card.buffs.Contains(BuffType.DrawPressure))
+                {
+                    //使用卡牌自身的pressure值作为加压数值
+                    if (potManager != null)
+                    {
+                        potManager.AddDirectPressure(card.pressure);
+                    }
+                }
+                //更新文字显示
                 UpdateCardCountDisplay();
 
-                // 【关键】暂停 0.2 秒再发下一张，制造节奏感
+                //暂停0.4秒再发下一张
                 yield return new WaitForSeconds(0.4f);
             }
         }

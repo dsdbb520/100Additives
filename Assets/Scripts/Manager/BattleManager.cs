@@ -291,7 +291,7 @@ public class BattleManager : MonoBehaviour
     {
         FloatingHint.Instance.ShowHint("获得胜利！");
         playerHealthStars.ClearShield();
-        FindObjectOfType<MapManager>().ReturnToMap();
+        FindObjectOfType<MapManager>().FinishCurrentNode();
         
     }
 
@@ -299,7 +299,7 @@ public class BattleManager : MonoBehaviour
     {
         FloatingHint.Instance.ShowHint("获得失败！");
         playerHealthStars.ClearShield();
-        FindObjectOfType<MapManager>().ReturnToMap();
+        FindObjectOfType<MapManager>().FinishCurrentNode();
     }
 
     #endregion

@@ -6252,6 +6252,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d227b4a1bcb72f94f84699619e5c9cb0, type: 2}
   - {fileID: 11400000, guid: f9047a8f7af8a384298545d2b76b8c5c, type: 2}
   battleManager: {fileID: 943227393}
+  potManager: {fileID: 1637432151}
 --- !u!1 &1931571007
 GameObject:
   m_ObjectHideFlags: 0
@@ -6298,10 +6299,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapPanel: {fileID: 1200749399}
   battlePanel: {fileID: 414289025}
-  restManager: {fileID: 677856580}
   nodeButtonPrefab: {fileID: 8477539034350530860, guid: 1fa0e6e4656f0e649afca344a39c1075, type: 3}
   nodesContainer: {fileID: 1696813339}
-  currentLayerNodes: []
+  globalHUD: {fileID: 1817974454}
+  restManager: {fileID: 677856580}
+  deckManager: {fileID: 1837318712}
+  rottenLeafCard: {fileID: 11400000, guid: cdf9b93c5a1a7014db6d907bb1a68e57, type: 2}
+  hexSize: 80
+  mapRadius: 3
 --- !u!1 &1944661525
 GameObject:
   m_ObjectHideFlags: 0
