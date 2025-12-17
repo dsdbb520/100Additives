@@ -20,21 +20,34 @@ public class BattleManager : MonoBehaviour
 
     public BattleState currentState;
     public List<EnemyData> enemyList = new List<EnemyData>();  // 战斗可选敌人列表
-    public Button RetryButton;
-    private float enemyMaxHealth;
-    private float enemyCurrentHealth;
-    private DeckManager deckManager;
-    private PotManager potManager;
-    private HandManager handManager;
-    private EnemyActionManager enemyActionManager;
-    private SmallStoveManager smallStoveManager;
-    private PlayerHealthStars playerHealthStars;
-    private EnemyData currentEnemy;
+    public float enemyMaxHealth;
+    public float enemyCurrentHealth;
 
-    [Header("Energy System")]
+    [Header("能量")]
     public int maxEnergy = 3;     //每回合最大费用
     public int currentEnergy;     //当前费用
     public TextMeshProUGUI energyText;
+
+    [Header("BOSS设置")]
+    public List<EnemyData> bossList = new List<EnemyData>(); //Boss列表
+    public bool isBossBattle = false; //当前是否是 Boss 战
+
+    [Header("难度设置")]
+    public float enemyStatMultiplier = 1.0f;  //敌人属性倍率（为难度系统做铺垫）
+
+    [Header("奖励设置")]
+    public int minGoldReward = 15;
+    public int maxGoldReward = 25;
+
+    [Header("组件赋值")]
+    public Button RetryButton;
+    public DeckManager deckManager;
+    public PotManager potManager;
+    public HandManager handManager;
+    public EnemyActionManager enemyActionManager;
+    public SmallStoveManager smallStoveManager;
+    public PlayerHealthStars playerHealthStars;
+    public EnemyData currentEnemy;
 
 
 
@@ -79,33 +92,52 @@ public class BattleManager : MonoBehaviour
     private void GameStart()
     {
         Debug.Log("Battle Started!");
-        deckManager = FindObjectOfType<DeckManager>();
-        potManager = FindObjectOfType<PotManager>();
-        handManager = FindObjectOfType<HandManager>();
-        smallStoveManager = FindObjectOfType<SmallStoveManager>();
-        enemyActionManager = FindObjectOfType<EnemyActionManager>();
-        playerHealthStars = FindObjectOfType<PlayerHealthStars>();
-        playerHealthStars.ClearShield();
-        handManager.DiscardAllCard(true);
-        potManager.ClearPot();
-        deckManager.ResetDeck();
-        potManager.UpdateTotalPressure();
+        
+        if (playerHealthStars != null) playerHealthStars.ClearShield();
+        if (handManager != null) handManager.DiscardAllCard(true);
+        if (potManager != null) { potManager.ClearPot(); potManager.UpdateTotalPressure(); potManager.ClearPot(); }
+        if (deckManager != null) deckManager.ResetDeck();
+
+        currentEnemy = null;
         FloatingHint.Instance.ClearAllHints();
         // 随机选择一个敌人
-        if (enemyList.Count > 0)
+        if (isBossBattle)
+        {
+            // Boss 战：从 Boss 列表选
+            if (bossList.Count > 0)
+            {
+                int randomIndex = Random.Range(0, bossList.Count);
+                currentEnemy = bossList[randomIndex];
+                Debug.Log($"BOSS BATTLE! Selected Boss:{currentEnemy.enemyName}");
+            }
+            else
+            {
+                Debug.LogError("Boss list is empty!");
+                currentEnemy = enemyList[Random.Range(0, enemyList.Count)];
+            }
+        }
+        else
         {
             int randomIndex = Random.Range(0, enemyList.Count);
             currentEnemy = enemyList[randomIndex];
             Debug.Log($"Selected Enemy: {currentEnemy.name}");
-            enemyActionManager.InitEnemy(currentEnemy);
-            enemyMaxHealth = currentEnemy.maxPhyHP;
-            enemyCurrentHealth = enemyMaxHealth;
-            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
-
         }
-        else
+
+        //应用难度倍率
+        if (currentEnemy != null)
         {
-            Debug.LogWarning("Enemy list is empty!");
+            enemyMaxHealth = currentEnemy.maxPhyHP * enemyStatMultiplier;
+            enemyCurrentHealth = enemyMaxHealth;
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(1, 1);
+            //初始化敌人行动AI
+            if (isBossBattle)
+            {
+                enemyActionManager.InitEnemy(currentEnemy, true, FindObjectOfType<MapManager>().collectedKeyIngredients);
+            }
+            else
+            {
+                enemyActionManager.InitEnemy(currentEnemy, false, 0);
+            }
         }
         ChangeState(BattleState.Start);
     }
@@ -274,8 +306,6 @@ public class BattleManager : MonoBehaviour
     }
     #endregion
 
-
-
     #region EndTurn
     private void RoundEnd()
     {
@@ -285,11 +315,18 @@ public class BattleManager : MonoBehaviour
 
     #endregion
 
-
     #region Win&Lose
     private void WinTurn()
     {
-        FloatingHint.Instance.ShowHint("获得胜利！");
+        float baseReward = Random.Range(minGoldReward, maxGoldReward + 1);
+        int finalReward = Mathf.RoundToInt(baseReward * enemyStatMultiplier);
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.AddGold(finalReward);
+        }
+
+        FloatingHint.Instance.ShowHint($"战斗胜利！获得 {finalReward} 金币");
+        Debug.Log($"Battle Won. Reward: {baseReward} * {enemyStatMultiplier} = {finalReward}");
         playerHealthStars.ClearShield();
         FindObjectOfType<MapManager>().FinishCurrentNode();
         
@@ -303,6 +340,19 @@ public class BattleManager : MonoBehaviour
     }
 
     #endregion
+
+    public void StartBossBattle()
+    {
+        isBossBattle = true;
+        ChangeState(BattleState.GameStart);
+    }
+
+    //外部调用：开启普通/精英战斗
+    public void StartNormalBattle(bool isElite = false)
+    {
+        isBossBattle = false;
+        ChangeState(BattleState.GameStart);
+    }
 
     public void UpdateEnergyUI()
     {
@@ -325,6 +375,22 @@ public class BattleManager : MonoBehaviour
         else
         {
             return false;
+        }
+    }
+
+
+
+    private void Update()
+    {
+
+        //Debug按键：秒杀敌人
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            if (currentEnemy != null && enemyCurrentHealth > 1)
+            {
+                ChangeState(BattleState.Win);
+                FloatingHint.Instance.ShowHint("【DEBUG】获得胜利！");
+            }
         }
     }
 
