@@ -16,14 +16,19 @@ public class EnemyActionManager : MonoBehaviour
     private EnemyHealthSlider enemyUI; //用来显示护盾
 
     //敌人的临时状态
-    private float currentShield = 0;
-    private float strengthBuff = 0; //力量加成
+    public float currentShield = 0;
+    public float strengthBuff = 0; //力量加成
 
     [Header("Boss数值")]
     public float heavyAttackDamage = 25f;
 
+    [Header("状态效果")]
+    public int poisonStacks = 0;   //中毒层数 (每回合扣血)
+    public bool isStunned = false; //是否眩晕
+    public int tempAttackDebuff = 0;
+
     //Boss强力技阈值
-    private List<float> hpThresholds;
+    private List<float> hpThresholds = new List<float>();
 
     //记录哪些阈值已经被禁用
     private HashSet<float> disabledThresholds = new HashSet<float>();
@@ -31,7 +36,7 @@ public class EnemyActionManager : MonoBehaviour
     //记录哪些阈值已经触发过
     private HashSet<float> triggeredThresholds = new HashSet<float>();
 
-    void Start()
+    void Awake()
     {
         playerHealth = FindObjectOfType<PlayerHealthStars>();
         deckManager = FindObjectOfType<DeckManager>();
@@ -42,6 +47,7 @@ public class EnemyActionManager : MonoBehaviour
 
     public void InitEnemy(EnemyData data, bool isBoss, int weaknessStacks)
     {
+        if (hpThresholds == null) hpThresholds = new List<float>();
         currentEnemyData = data;
         disabledThresholds.Clear();
         triggeredThresholds.Clear();
@@ -138,22 +144,28 @@ public class EnemyActionManager : MonoBehaviour
     public void ExecuteAction()
     {
         if (nextAction == null) return;
+        if (nextAction.intentType == EnemyIntentType.Stun || isStunned)
+        {
+            FloatingHint.Instance.ShowHint("敌人眩晕中，跳过回合！");
+            isStunned = false; // 消耗眩晕
+            return;
+        }
 
         FloatingHint.Instance.ShowHint($"敌人使用了 {nextAction.actionName}!");
 
         switch (nextAction.intentType)
         {
             case EnemyIntentType.Attack:
-                // 伤害 = 基础值 + 力量Buff
-                float damage = nextAction.value + strengthBuff;
-                playerHealth.TakeDamage(damage);
+                //伤害 = 基础值 + 力量Buff - Debuff
+                float finalDamage = Mathf.Max(0, nextAction.value + strengthBuff - tempAttackDebuff);
+                playerHealth.TakeDamage(finalDamage);
 
-                FloatingHint.Instance.ShowHint($"受到 {damage} 点伤害！");
+                FloatingHint.Instance.ShowHint($"受到 {finalDamage} 点伤害！");
                 break;
 
             case EnemyIntentType.Defend:
                 currentShield += nextAction.value;
-                //TODO: 需要在 EnemyHealthSlider 里加护盾显示
+                //TODO: 需要在EnemyHealthSlider里加护盾显示
                 FloatingHint.Instance.ShowHint($"敌人获得 {nextAction.value} 护盾");
                 break;
 
@@ -193,8 +205,8 @@ public class EnemyActionManager : MonoBehaviour
         }
     }
 
-    //敌人受伤逻辑 (含护盾抵消)
-    public float TakeDamage(float incomingDamage)
+    //敌人受伤逻辑
+    public float TakePhysicalDamage(float incomingDamage)
     {
         if (currentShield > 0)
         {
@@ -213,12 +225,41 @@ public class EnemyActionManager : MonoBehaviour
         return incomingDamage;
     }
 
+    public float TakeMentalDamage(float incomingDamage)
+    {
+        //可能以后会有精神护盾
+        return incomingDamage;
+    }
 
-    //检查血量是否触发大招
+    public void OnTurnStart()
+    {
+        //在这里重置临时Debuff
+        if (tempAttackDebuff > 0)
+        {
+            tempAttackDebuff = 0;
+            Debug.Log("攻击力减益已过期");
+        }
+    }
+
+    public void OnTurnEnd()
+    {
+        //结算中毒伤害 (精神伤害)
+        if (poisonStacks > 0)
+        {
+            float poisonDamage = poisonStacks;
+            battleManager.enemyCurrentMenHealth -= poisonDamage;
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(battleManager.enemyCurrentMenHealth / battleManager.enemyMaxMenHealth, battleManager.enemyCurrentMenHealth / battleManager.enemyMaxMenHealth);
+            FloatingHint.Instance.ShowHint($"毒发身亡... -{poisonDamage}");
+            poisonStacks--;
+        }
+    }
+
+
+    //检查血量是否触发强力技
     private bool CheckForThresholdTrigger()
     {
         //获取当前Boss血量百分比
-        float currentHpPercent = battleManager.enemyCurrentHealth / battleManager.enemyMaxHealth;
+        float currentHpPercent = battleManager.enemyCurrentPhyHealth / battleManager.enemyMaxPhyHealth;
 
         foreach (float threshold in hpThresholds)
         {
@@ -236,7 +277,8 @@ public class EnemyActionManager : MonoBehaviour
                 nextAction.actionName = "暴怒重击";
                 nextAction.intentType = EnemyIntentType.Attack; //显示攻击意图
                 nextAction.value = heavyAttackDamage; //设置高额伤害
-                nextAction.description = $"生命值低于 {threshold * 100}% 触发的强力攻击！";
+                string percentStr = $"{threshold * 100}%";
+                nextAction.description = $"生命值低于 <color=yellow>{percentStr}</color> 触发 <color=red><size=120%><b>强力攻击</b></size></color>！";
 
                 Debug.LogWarning($"BOSS 触发阈值 {threshold * 100}%！释放强力攻击！");
 
@@ -247,4 +289,38 @@ public class EnemyActionManager : MonoBehaviour
         }
         return false;
     }
+
+
+    #region 应用各种DeBuff
+    public void ApplyPoison(int amount)
+    {
+        poisonStacks += amount;
+        FloatingHint.Instance.ShowHint($"中毒 +{amount}");
+        //enemyUI.UpdateStatusUI(poisonStacks, isStunned, tempAttackDebuff); // 建议后续给UI加个刷新方法
+    }
+
+    public void ApplyStun()
+    {
+        if (isStunned) return;
+        isStunned = true;
+        //强制更改当前意图为Stun
+        if (nextAction == null) nextAction = new EnemyAction();
+        nextAction.intentType = EnemyIntentType.Stun;
+        nextAction.actionName = "眩晕";
+        nextAction.value = 0;
+        nextAction.description = "被神秘料理击晕，无法行动。";
+
+        //刷新 UI
+        FindObjectOfType<EnemyIntentUI>().UpdateIntent(nextAction);
+
+        FloatingHint.Instance.ShowHint("敌人被眩晕了！");
+    }
+
+    public void ApplyAttackDebuff(int amount)
+    {
+        tempAttackDebuff += amount;
+        FloatingHint.Instance.ShowHint($"攻击力 -{amount}");
+    }
+
+    #endregion
 }

@@ -46,15 +46,11 @@ public class SmallStoveManager : MonoBehaviour
             Debug.LogError("Manager 丢失！");
             return false;
         }
-        if (card.healValue <= 0 && card.shieldValue <= 0)
-        {
-            FloatingHint.Instance.ShowHint("这食材在小灶里没啥用...");
-            return false;
-        }
 
         currentUsage++;
         UpdateUsageUI();
         ApplyCardEffect(card);
+        SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, true, EffectTriggerPhase.OnAdd);
 
         //视觉效果
         cardObj.transform.SetParent(stovePanel);
@@ -65,7 +61,7 @@ public class SmallStoveManager : MonoBehaviour
             })
             .SetLink(cardObj);
 
-        // 6. 数据处理
+        //数据处理
         handManager.RemoveCardFromHand(card);
         deckManager.discardPile.Add(card);
 
@@ -76,27 +72,14 @@ public class SmallStoveManager : MonoBehaviour
 
     private void ApplyCardEffect(CardData card)
     {
-        bool hasEffect = false;
-
         if (card.healValue > 0)
         {
             playerHealth.Heal(card.healValue);
-            FloatingHint.Instance.ShowHint($"恢复 {card.healValue} 点生命");
-            hasEffect = true;
         }
 
         if (card.shieldValue > 0)
         {
             playerHealth.AddShield(card.shieldValue);
-            FloatingHint.Instance.ShowHint($"获得 {card.shieldValue} 点护盾");
-            hasEffect = true;
-        }
-
-        // TODO：在这里加 Buff/Debuff 逻辑
-
-        if (!hasEffect)
-        {
-            FloatingHint.Instance.ShowHint("这食材在小灶里没啥用...");
         }
     }
 

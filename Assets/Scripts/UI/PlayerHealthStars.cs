@@ -18,6 +18,13 @@ public class PlayerHealthStars : MonoBehaviour
         ClearShield();
     }
 
+    public void ClearDebuffs()
+    {
+        //还没有玩家Debuff系统
+        Debug.Log("所有负面状态已清除 (占位符)");
+        FloatingHint.Instance.ShowHint("状态已净化！");
+    }
+
 
     public void TakeDamage(float damage)
     {

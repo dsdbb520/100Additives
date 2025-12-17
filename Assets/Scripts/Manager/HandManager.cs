@@ -59,6 +59,15 @@ public class HandManager : MonoBehaviour
                 cardsToDiscard.Add(cardData);  //添加到临时列表
             }
         }
+
+        //应用卡牌“弃牌时”效果
+        foreach (CardData card in handCards)
+        {
+            if (!string.IsNullOrEmpty(card.specialEffectID))
+            {
+                SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnHandTurnEnd);
+            }
+        }
         // 将所有没有冻结的卡牌添加到弃牌堆
         FindObjectOfType<DeckManager>().discardPile.AddRange(cardsToDiscard);
 
@@ -87,6 +96,30 @@ public class HandManager : MonoBehaviour
                         .OnComplete(() => Destroy(cardTrans.gameObject))
                         .SetLink(cardTrans.gameObject);
                 }
+            }
+        }
+    }
+
+
+    public void ExhaustCard(CardData card)
+    {
+        //从数据列表移除
+        if (handCards.Contains(card))
+        {
+            handCards.Remove(card);
+        }
+
+        //找到对应的UI对象并销毁
+        foreach (Transform child in handPanel)
+        {
+            CardUIHandler handler = child.GetComponent<CardUIHandler>();
+            if (handler != null && handler.cardData == card)
+            {
+                //播放一个缩放消失动画
+                child.DOScale(Vector3.zero, 0.3f)
+                    .SetEase(Ease.InBack)
+                    .OnComplete(() => Destroy(child.gameObject));
+                break; //找到一个就停，防止删错
             }
         }
     }

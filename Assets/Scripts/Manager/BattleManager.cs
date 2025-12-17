@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,8 +21,18 @@ public class BattleManager : MonoBehaviour
 
     public BattleState currentState;
     public List<EnemyData> enemyList = new List<EnemyData>();  // 战斗可选敌人列表
-    public float enemyMaxHealth;
-    public float enemyCurrentHealth;
+
+    [Header("敌人状态")]
+    public float enemyMaxPhyHealth;
+    public float enemyCurrentPhyHealth;
+    public float enemyMaxMenHealth;
+    public float enemyCurrentMenHealth;
+
+    [Header("临时状态")]
+    public int nextCardCostModifier = 0; //下一张牌费用修正
+    public bool doubleStapleDamage = false; //主食牌伤害翻倍
+    public bool lifestealActive = false; //吸血模式
+    public int extraDrawsNextTurn = 0; //增加下回合抽牌数
 
     [Header("能量")]
     public int maxEnergy = 3;     //每回合最大费用
@@ -126,9 +137,13 @@ public class BattleManager : MonoBehaviour
         //应用难度倍率
         if (currentEnemy != null)
         {
-            enemyMaxHealth = currentEnemy.maxPhyHP * enemyStatMultiplier;
-            enemyCurrentHealth = enemyMaxHealth;
+            //初始化血条
+            enemyMaxPhyHealth = currentEnemy.maxPhyHP * enemyStatMultiplier;
+            enemyCurrentPhyHealth = enemyMaxPhyHealth;
+            enemyMaxMenHealth = currentEnemy.maxMenHP * enemyStatMultiplier;
+            enemyCurrentMenHealth = enemyMaxMenHealth;
             FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(1, 1);
+
             //初始化敌人行动AI
             if (isBossBattle)
             {
@@ -168,8 +183,23 @@ public class BattleManager : MonoBehaviour
     }
     private IEnumerator EnemyTurnCoroutine(EnemyData enemy)
     {
+        //回合开始
+        enemyActionManager.OnTurnStart();
+
+        //执行行动（如果没被晕
         enemyActionManager.ExecuteAction();
+
         yield return new WaitForSeconds(1.0f);
+
+        //回合结束
+        enemyActionManager.OnTurnEnd();
+
+        // 检查是否被毒死
+        if (enemyCurrentMenHealth <= 0)
+        {
+            ChangeState(BattleState.Win);
+            yield break;
+        }
         handManager.DiscardAllCard();
         deckManager.UpdateCardCountDisplay();
         FloatingHint.Instance.ShowHint("回合结束，丢弃所有手牌！");
@@ -196,6 +226,16 @@ public class BattleManager : MonoBehaviour
         StartCoroutine(potManager.PlayCookingAnimation(2.5f));
         yield return new WaitForSeconds(2.5f);
 
+        //触发所有卡牌“上菜时”的效果
+        foreach (var card in potManager.cookingPot)
+        {
+            if (!string.IsNullOrEmpty(card.specialEffectID))
+            {
+                SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnServe);
+            }
+        }
+        yield return new WaitForSeconds(0.5f);
+
         // 计算压力总和
         float totalPressure = potManager.UpdateTotalPressure();
 
@@ -204,19 +244,26 @@ public class BattleManager : MonoBehaviour
         if (totalPressure > 100f)
         {
             //计算超出的压力部分
-            float excessPressure = totalPressure - 100f;
+            float excess = totalPressure - 100f;
 
             //计算爆炸概率
-            float explosionChance = Mathf.Clamp(excessPressure / 20f, 0f, 1f);
+            float chance = potManager.GetExplosionChance(excess);
 
             //随机判断是否发生爆炸
-            if (UnityEngine.Random.value < explosionChance)
+            if (UnityEngine.Random.value < chance)
             {
                 isExplosion = true;
-                int selfDamage = 1 + Mathf.FloorToInt(excessPressure / 10f);
-
-                playerHealthStars.TakeDamage(selfDamage);
-                FloatingHint.Instance.ShowHint($"炸锅了！玩家受到 {selfDamage} 点伤害！");
+                if (potManager.ignoreExplosionDamage)
+                {
+                    FloatingHint.Instance.ShowHint("安全阀生效！免疫炸锅伤害！");
+                    potManager.ignoreExplosionDamage = false; //已生效
+                }
+                else
+                {
+                    int selfDamage = 1 + Mathf.FloorToInt(excess / 10f);
+                    playerHealthStars.TakeDamage(selfDamage);
+                    FloatingHint.Instance.ShowHint($"炸锅了！玩家受到{selfDamage}点伤害！");
+                }
             }
             if(playerHealthStars.currentHealth <= 0)
             {
@@ -225,24 +272,49 @@ public class BattleManager : MonoBehaviour
                 yield break;
             }
         }
+
         if (!isExplosion)
         {
+            
+
             // 计算伤害
-            var (phyDamage, menDamage) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
-            if (phyDamage >= enemyCurrentHealth || menDamage >= enemyCurrentHealth)
+            var (finalPhy, finalMen) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
+
+            //执行吸血逻辑
+            if (lifestealActive)
             {
-                FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(0, 0);
-                FloatingHint.Instance.ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
+                float totalDmg = finalPhy + finalMen;
+                int healAmount = Mathf.FloorToInt(totalDmg * 0.5f);
+                if (healAmount > 0)
+                {
+                    playerHealthStars.Heal(healAmount);
+                    FloatingHint.Instance.ShowHint($"吸血：恢复{healAmount}点HP");
+                }
+                lifestealActive = false; //已生效
+            }
+            enemyCurrentPhyHealth -= finalPhy;
+            enemyCurrentMenHealth -= finalMen;
+
+            // 限制血量不低于 0 (可选，但这有利于 UI 显示)
+            if (enemyCurrentPhyHealth < 0) enemyCurrentPhyHealth = 0;
+            if (enemyCurrentMenHealth < 0) enemyCurrentMenHealth = 0;
+
+            // 刷新 UI
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(
+                enemyCurrentPhyHealth / enemyMaxPhyHealth,
+                enemyCurrentMenHealth / enemyMaxMenHealth
+            );
+
+            FloatingHint.Instance.ShowHint($"造成了：物理伤害 {finalPhy} | 精神伤害 {finalMen}");
+
+            // 判断胜利条件：任意一条血归零
+            if (enemyCurrentPhyHealth <= 0 || enemyCurrentMenHealth <= 0)
+            {
                 yield return new WaitForSeconds(1.0f);
                 ChangeState(BattleState.Win);
                 yield break;
             }
-            else
-            {
-                enemyCurrentHealth -= phyDamage;
-                FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentHealth / enemyMaxHealth, enemyCurrentHealth / enemyMaxHealth);
-                FloatingHint.Instance.ShowHint("本次造成了" + phyDamage.ToString() + "点伤害");
-            }
+
             int shieldGain = potManager.cookingPot.Count;
             if (shieldGain > 0)
             {
@@ -250,9 +322,23 @@ public class BattleManager : MonoBehaviour
                 FloatingHint.Instance.ShowHint($"获得 {shieldGain} 点护盾！");
             }
         }
+
         yield return new WaitForSeconds(1.0f);
-        deckManager.discardPile.AddRange(potManager.cookingPot);
+        foreach (var card in potManager.cookingPot)
+        {
+            if (card.exhaustOnPlay)
+            {
+                //如果是消耗牌，不进弃牌堆
+                Debug.Log($"卡牌 {card.cardName} 被消耗了");
+            }
+            else
+            {
+                //正常牌进入弃牌堆
+                deckManager.discardPile.Add(card);
+            }
+        }
         potManager.ClearPot();
+        doubleStapleDamage = false;  //已生效
         ChangeState(BattleState.PlayerTurn);
     }
 
@@ -261,20 +347,39 @@ public class BattleManager : MonoBehaviour
     {
         float totalPhyDamage = 0;
         float totalMenDamage = 0;
-        // 遍历锅中的每张卡牌，计算物理伤害和精神伤害
+        //遍历锅中的每张卡牌，计算物理伤害和精神伤害
         foreach (var card in potCards)
         {
-            // 计算物理伤害
+            //计算物理伤害
             float phyDamage = CalculateDamage(card.phyDamage, card.tags, enemy);
-            totalPhyDamage += phyDamage;
-            // 计算精神伤害
+            //计算精神伤害
             float menDamage = CalculateDamage(card.menDamage, card.tags, enemy);
+
+            //执行双倍伤害效果
+            if (doubleStapleDamage && !card.tags.Contains(TagType.Seasoning))
+            {
+                phyDamage *= 2;
+                menDamage *= 2;
+            }
+            totalPhyDamage += phyDamage;
             totalMenDamage += menDamage;
         }
-        float finalPhy = enemyActionManager.TakeDamage(totalPhyDamage);
-        float finalMen = enemyActionManager.TakeDamage(totalMenDamage); //护盾通用
-        Debug.Log($"Total Physical Damage: {totalPhyDamage}");
-        Debug.Log($"Total Mental Damage: {totalMenDamage}");
+
+        //应用伤害倍率
+        if (potManager != null && potManager.heatMultiplier != 1.0f)
+        {
+            totalPhyDamage *= potManager.heatMultiplier;
+            totalMenDamage *= potManager.heatMultiplier;
+            Debug.Log($"热度倍率生效 x{potManager.heatMultiplier}");
+        }
+
+        //物理伤害：会被护盾抵消
+        float finalPhy = enemyActionManager.TakePhysicalDamage(totalPhyDamage);
+
+        //精神伤害：直接穿透护盾
+        float finalMen = enemyActionManager.TakeMentalDamage(totalMenDamage);
+
+        Debug.Log($"结算伤害 物理： {finalPhy}(原{totalPhyDamage})，精神:{finalMen}(原{totalMenDamage})");
         return (finalPhy, finalMen);
 
     }
@@ -303,6 +408,43 @@ public class BattleManager : MonoBehaviour
         }
 
         return totalDamage;
+    }
+
+    //处理卡牌特效造成的直接伤害
+    public void DealMenDamageFromEffect(int amount)
+    {
+        if (currentEnemy != null)
+        {
+            //直接扣血
+            float actualDamage = enemyActionManager.TakeMentalDamage(amount);
+            enemyCurrentMenHealth -= actualDamage;
+
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentMenHealth / enemyMaxMenHealth, enemyCurrentMenHealth / enemyMaxMenHealth);
+
+            //检查是否打死
+            if (enemyCurrentMenHealth <= 0)
+            {
+                ChangeState(BattleState.Win);
+            }
+        }
+    }
+
+    public void DealPhyDamageFromEffect(int amount)
+    {
+        if (currentEnemy != null)
+        {
+            //直接扣血
+            float actualDamage = enemyActionManager.TakePhysicalDamage(amount);
+            enemyCurrentPhyHealth -= actualDamage;
+
+            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(enemyCurrentPhyHealth / enemyMaxPhyHealth, enemyCurrentPhyHealth / enemyMaxPhyHealth);
+
+            //检查是否打死
+            if (enemyCurrentPhyHealth <= 0)
+            {
+                ChangeState(BattleState.Win);
+            }
+        }
     }
     #endregion
 
@@ -366,27 +508,31 @@ public class BattleManager : MonoBehaviour
     //尝试消耗费用，用于检测当前费用是否足够
     public bool TryUseEnergy(int amount)
     {
-        if (currentEnergy >= amount)
+        //应用修正
+        int finalCost = Mathf.Max(0, amount + nextCardCostModifier);
+        if (currentEnergy >= finalCost)
         {
-            currentEnergy -= amount;
+            currentEnergy -= finalCost;
             UpdateEnergyUI();
+
+            //消耗掉修正
+            if (nextCardCostModifier != 0)
+            {
+                nextCardCostModifier = 0;
+            }
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
 
 
     private void Update()
     {
-
         //Debug按键：秒杀敌人
         if (Input.GetKeyDown(KeyCode.K))
         {
-            if (currentEnemy != null && enemyCurrentHealth > 1)
+            if (currentEnemy != null)
             {
                 ChangeState(BattleState.Win);
                 FloatingHint.Instance.ShowHint("【DEBUG】获得胜利！");

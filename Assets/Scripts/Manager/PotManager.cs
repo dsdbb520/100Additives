@@ -8,18 +8,34 @@ public class PotManager : MonoBehaviour
 {
     public List<CardData> cookingPot = new List<CardData>();
 
+    [Header("大锅参数")]
+    public float heatMultiplier = 1.0f; //伤害倍率
+    public bool stopPressureGrowth = false; //是否暂停压力自然增长
+    public float explosionChanceModifier = 0f; //炸锅概率修正
+    public bool ignoreExplosionDamage = false; //免疫炸锅伤害
+
+    [Header("状态控制")]
+    public bool canServe = true;  //是否允许上菜
+
+    [Header("组件引用")]
     public Image potPressureFill;
     public Image extraPotPressureFill;
     public Image extraExtraPotPressureFill;
     public Sprite Green, Yellow, Red;
     public TextMeshProUGUI pressureNum;
     public Transform potPanel;
+    private SpecialEffectManager fxManager;
+
+
     private float temporaryPressure = 0f;
+
+    
 
     private void Start()
     {
         potPressureFill = GameObject.Find("PotPressureFill").GetComponent<Image>();  //找到压力表
         pressureNum = GameObject.Find("Pressure").GetComponent<TextMeshProUGUI>();
+        fxManager = SpecialEffectManager.Instance;
         UpdateTotalPressure();
     }
 
@@ -31,22 +47,46 @@ public class PotManager : MonoBehaviour
             FloatingHint.Instance.ShowHint("卡牌被冻结，请先解冻！");
             return; //如果卡牌被冻结，不进入锅
         }
+
+        if (card.targetType != CardTargetType.BigPot && card.targetType != CardTargetType.Dual)
+        {
+            Debug.LogError($"错误：试图将非大锅牌 {card.cardName} 加入大锅！");
+            return;
+        }
+
+        float oldPressure = GetTotalPressure();
         cookingPot.Add(card);
         cardObject.transform.SetParent(potPanel);  //移动卡牌到锅面板
         cardObject.transform.DOScale(new Vector3(0.7f, 0.7f, 1), 0.3f); //将卡牌缩小
         Debug.Log($"Card {card.cardName} added to the pot.");
         UpdateTotalPressure();
+
+        //执行特殊效果：压力增大时
+        if (GetTotalPressure() > oldPressure)
+        {
+            if (fxManager != null) fxManager.OnPressureIncreased();
+        }
+        //执行特殊效果：加入锅中时
+        if (!string.IsNullOrEmpty(card.specialEffectID))
+        {
+            SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnAdd);
+        }
     }
 
-    // 移除卡牌并添加回手牌
+    //移除卡牌并添加回手牌
     public void RemoveCardFromPot(CardData card, GameObject cardObject, HandManager handManager)
     {
-        cookingPot.Remove(card);
-        handManager.handCards.Add(card);
-        cardObject.transform.SetParent(handManager.handPanel);  // 移动卡牌回手牌面板
-        cardObject.transform.DOScale(new Vector3(1, 1, 1), 0.3f); // 将卡牌放大
-        Debug.Log($"Card {card.cardName} returned to the hand.");
-        UpdateTotalPressure();
+        if (cookingPot.Contains(card))
+        {
+            cookingPot.Remove(card);
+            if (handManager != null)
+            {
+                handManager.handCards.Add(card);
+                cardObject.transform.SetParent(handManager.handPanel);
+                cardObject.transform.DOScale(Vector3.one, 0.3f);
+            }
+            UpdateTotalPressure();
+        }
     }
 
 
@@ -65,6 +105,7 @@ public class PotManager : MonoBehaviour
         // 清空锅的卡牌列表
         cookingPot.Clear();
         temporaryPressure = 0;
+        ResetRoundStatus();
         UpdateTotalPressure();
         Debug.Log("All cards cleared from the pot.");
     }
@@ -87,12 +128,16 @@ public class PotManager : MonoBehaviour
     //直接增加压力
     public void AddDirectPressure(float amount)
     {
+        if (amount > 0 && fxManager != null) fxManager.OnPressureIncreased();
         temporaryPressure += amount;
         UpdateTotalPressure();
+    }
 
-        //视觉反馈
-        if (amount > 0)
-            FloatingHint.Instance.ShowHint($"压力激增 +{amount}% !");
+    public float GetTotalPressure()
+    {
+        float total = temporaryPressure;
+        foreach (var card in cookingPot) total += card.pressure;
+        return total;
     }
 
     public float UpdateTotalPressure()
@@ -102,6 +147,10 @@ public class PotManager : MonoBehaviour
         foreach (var card in cookingPot)
         {
             totalPressure += card.pressure;
+            if (card.specialEffectID == "LiquidNitrogen")  //清空液氮之前的所有卡的压力
+            {
+                totalPressure = 0;
+            }
         }
         potPressureFill.fillAmount = totalPressure / 200f;
         pressureNum.text = totalPressure.ToString() + "%";
@@ -130,7 +179,6 @@ public class PotManager : MonoBehaviour
             extraExtraPotPressureFill.gameObject.SetActive(false);
         return totalPressure;
     }
-
 
     public IEnumerator PlayCookingAnimation(float duration = 2.0f)
     {
@@ -187,5 +235,65 @@ public class PotManager : MonoBehaviour
             }
         }
         yield return new WaitForSeconds(0.5f); //等待完全消失
+    }
+
+    //统计锅里有多少张特定的标签
+    public int CountTagsInPot(TagType targetTag)
+    {
+        int count = 0;
+        foreach (var card in cookingPot)
+        {
+            if (card.tags.Contains(targetTag))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    //修改伤害倍率
+    public void ModifyHeatMultiplier(float amount)
+    {
+        heatMultiplier += amount;
+        Debug.Log($"大锅热度倍率变更: {heatMultiplier}");
+    }
+
+    //获取炸锅概率
+    public float GetExplosionChance(float excessPressure)
+    {
+        //基础概率+修正值
+        float chance = Mathf.Clamp(excessPressure / 20f, 0f, 1f);
+        return Mathf.Clamp01(chance + explosionChanceModifier);
+    }
+
+    //移除最后一张加入的牌
+    public void RemoveLastCard(HandManager handManager)
+    {
+        if (cookingPot.Count > 0)
+        {
+            CardData cardToRemove = cookingPot[cookingPot.Count - 1];
+            GameObject cardObj = GetCardObject(cardToRemove);
+            RemoveCardFromPot(cardToRemove, cardObj, handManager);
+            FloatingHint.Instance.ShowHint($"移除了{cardToRemove.cardName}");
+        }
+        else
+        {
+            FloatingHint.Instance.ShowHint("锅是空的！");
+        }
+    }
+
+    public void DisableServing()
+    {
+        canServe = false;
+        Debug.Log("本回合禁止上菜！");
+    }
+
+    //重置状态
+    public void ResetRoundStatus()
+    {
+        heatMultiplier = 1.0f;
+        canServe = true;
+        stopPressureGrowth = false;
+        explosionChanceModifier = 0f;
     }
 }

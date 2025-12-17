@@ -77,15 +77,12 @@ public class DeckManager : MonoBehaviour
                 // 发一张牌
                 handManager.AddCardToHand(card);
 
-                //触发DrawPressure Buff
-                if (card.buffs.Contains(BuffType.DrawPressure))
+                //执行抽到时效果
+                if (!string.IsNullOrEmpty(card.specialEffectID))
                 {
-                    //使用卡牌自身的pressure值作为加压数值
-                    if (potManager != null)
-                    {
-                        potManager.AddDirectPressure(card.pressure);
-                    }
+                    SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnDraw);
                 }
+
                 //更新文字显示
                 UpdateCardCountDisplay();
 
@@ -119,6 +116,11 @@ public class DeckManager : MonoBehaviour
 
     void openFire()
     {
+        if (!potManager.canServe)
+        {
+            FloatingHint.Instance.ShowHint("锅里有液氮，现在上菜太危险了！(本回合禁止上菜)");
+            return;
+        }
         if (battleManager.TryUseEnergy(3))
         {
             battleManager.ChangeState(BattleManager.BattleState.Resolution);
@@ -129,9 +131,46 @@ public class DeckManager : MonoBehaviour
         }
     }
 
+    public void DrawStapleCards(int count)
+    {
+        StartCoroutine(DrawStapleCardsCoroutine(count));
+    }
+
+    private IEnumerator DrawStapleCardsCoroutine(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            //在抽牌堆找主食
+            CardData targetCard = drawPile.Find(c => c.tags.Contains(TagType.Ingredient));
+
+
+            //找到了就抽上来
+            if (targetCard != null)
+            {
+                drawPile.Remove(targetCard);
+                handManager.AddCardToHand(targetCard);
+                UpdateCardCountDisplay();
+            }
+            else
+            {
+                FloatingHint.Instance.ShowHint("抽牌堆里没有主食了！");
+                break;
+            }
+
+            yield return new WaitForSeconds(0.2f); //抽牌间隔
+        }
+    }
+
     public void PlayerTurnStart()
     {
-        DrawCard(DrawNumber);
+        //基础抽牌数+额外抽牌数
+        int totalDraw = DrawNumber + battleManager.extraDrawsNextTurn;
+        if (battleManager.extraDrawsNextTurn > 0)
+        {
+            FloatingHint.Instance.ShowHint($"板蓝根生效！额外抽取 {battleManager.extraDrawsNextTurn} 张牌");
+            battleManager.extraDrawsNextTurn = 0;
+        }
+        DrawCard(totalDraw);
         UpdateCardCountDisplay();
     }
 
