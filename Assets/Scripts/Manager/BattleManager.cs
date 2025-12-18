@@ -7,6 +7,8 @@ using UnityEngine.UI;
 
 public class BattleManager : MonoBehaviour
 {
+
+    public static BattleManager Instance { get; private set; }
     public enum BattleState
     {
         GameStart,
@@ -39,9 +41,12 @@ public class BattleManager : MonoBehaviour
     public int currentEnergy;     //当前费用
     public TextMeshProUGUI energyText;
 
-    [Header("BOSS设置")]
+    [Header("Boss设置")]
     public List<EnemyData> bossList = new List<EnemyData>(); //Boss列表
     public bool isBossBattle = false; //当前是否是 Boss 战
+
+    [Header("Elite设置")]
+    public bool isEliteBattle = false;
 
     [Header("难度设置")]
     public float enemyStatMultiplier = 1.0f;  //敌人属性倍率（为难度系统做铺垫）
@@ -60,6 +65,11 @@ public class BattleManager : MonoBehaviour
     public EnemyData currentEnemy;
 
 
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+    }
 
     public void ChangeState(BattleState newState)
     {
@@ -478,9 +488,11 @@ public class BattleManager : MonoBehaviour
     private void WinTurn()
     {
         RelicManager.Instance.TriggerAllRelics(RelicTriggerType.PostBattle);
+        BattleType type = BattleType.Normal;
+        if (isBossBattle) type = BattleType.Boss;
+        else if (isEliteBattle) type = BattleType.Elite;
+        BattleRewardUI.Instance.ShowVictoryRewards(type);
         playerHealthStars.ClearShield();
-        FindObjectOfType<MapManager>().FinishCurrentNode();
-        
     }
 
     private void LoseTurn()
@@ -502,6 +514,7 @@ public class BattleManager : MonoBehaviour
     public void StartNormalBattle(bool isElite = false)
     {
         isBossBattle = false;
+        isEliteBattle = isElite;
         ChangeState(BattleState.GameStart);
     }
 

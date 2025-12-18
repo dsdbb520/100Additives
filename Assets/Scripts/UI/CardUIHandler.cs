@@ -171,6 +171,15 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         isDragging = false;
     }
 
+    private void OnDisable()
+    {
+        if (TooltipUI.Instance != null)
+        {
+            TooltipUI.Instance.Hide(true);
+        }
+        transform.localScale = Vector3.one;
+    }
+
 
     void ReturnToHand()
     {
@@ -217,6 +226,11 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             {
                 return new Vector3(0.8f, 0.8f, 1f);
             }
+        }
+        //如果是奖励页面
+        if(transform.parent.name== "CardDraftSelect")
+        {
+            return new Vector3(0.8f, 0.8f, 1f);
         }
         //默认情况，基准大小是 1.0
         return Vector3.one;
