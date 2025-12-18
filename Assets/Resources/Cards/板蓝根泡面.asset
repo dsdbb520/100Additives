@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588ab353f0eee4e4486194fe8fff53ad, type: 3}
+  m_Name: "\u677F\u84DD\u6839\u6CE1\u9762"
+  m_EditorClassIdentifier: 
+  cardName: "\u677F\u84DD\u6839\u6CE1\u9762"
+  icon: {fileID: 1303017728, guid: 314d877a982cb624c9a33c4f0525ad5b, type: 3}
+  rarity: 0
+  description: "\u9020\u6210 <color=red>5</color> \u70B9\u7CBE\u795E\u4F24\u5BB3\u3002\r\n<color=#00FFFF><b>\u3010\u4E0A\u83DC\u65F6\u3011</b></color>\u4E0B\u56DE\u5408\u591A\u62BD
+    <color=red>1</color> \u5F20\u724C\u3002\u538B\u529B <color=red>+5%</color> \u3002\r\n<size=75%><color=#CCCCCC><i>\u9ED1\u6697\u6599\u7406\u754C\u7684\u5165\u95E8\u6B3E\u3002</i></color></size>\r\n"
+  cost: 0
+  tags: 0700000001000000
+  targetType: 0
+  isUnplayable: 0
+  exhaustOnPlay: 0
+  phyDamage: 0
+  menDamage: 5
+  selfDamage: 0
+  shieldValue: 0
+  healValue: 0
+  pressure: 0
+  specialEffectID: IsatisRoot
+  isFrozen: 0

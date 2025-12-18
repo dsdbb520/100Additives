@@ -46,9 +46,8 @@ public class BattleManager : MonoBehaviour
     [Header("难度设置")]
     public float enemyStatMultiplier = 1.0f;  //敌人属性倍率（为难度系统做铺垫）
 
-    [Header("奖励设置")]
-    public int minGoldReward = 15;
-    public int maxGoldReward = 25;
+    [Header("玩家基础数值")]
+    public float basePlayerStrength;
 
     [Header("组件赋值")]
     public Button RetryButton;
@@ -103,7 +102,11 @@ public class BattleManager : MonoBehaviour
     private void GameStart()
     {
         Debug.Log("Battle Started!");
-        
+
+        basePlayerStrength = 0;
+        //触发战斗开始遗物
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.BattleStart);
+
         if (playerHealthStars != null) playerHealthStars.ClearShield();
         if (handManager != null) handManager.DiscardAllCard(true);
         if (potManager != null) { potManager.ClearPot(); potManager.UpdateTotalPressure(); potManager.ClearPot(); }
@@ -134,13 +137,15 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"Selected Enemy: {currentEnemy.name}");
         }
 
+        float hpMult = RelicManager.Instance.GetEnemyMaxHpMultiplier();
+
         //应用难度倍率
         if (currentEnemy != null)
         {
-            //初始化血条
-            enemyMaxPhyHealth = currentEnemy.maxPhyHP * enemyStatMultiplier;
+            //初始化血条、应用血量修正
+            enemyMaxPhyHealth = currentEnemy.maxPhyHP * enemyStatMultiplier * hpMult;
             enemyCurrentPhyHealth = enemyMaxPhyHealth;
-            enemyMaxMenHealth = currentEnemy.maxMenHP * enemyStatMultiplier;
+            enemyMaxMenHealth = currentEnemy.maxMenHP * enemyStatMultiplier * hpMult;
             enemyCurrentMenHealth = enemyMaxMenHealth;
             FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(1, 1);
 
@@ -160,7 +165,12 @@ public class BattleManager : MonoBehaviour
     private void RoundStart()
     {
         deckManager.PlayerTurnStart();
-        currentEnergy = maxEnergy;
+
+        //应用最大燃气修正
+        int extraEnergy = RelicManager.Instance.GetMaxEnergyModifier();
+        currentEnergy = maxEnergy + extraEnergy;
+
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.TurnStart);
         if (smallStoveManager != null)smallStoveManager.ResetStove();
         UpdateEnergyUI();
         ChangeState(BattleState.PlayerTurn);
@@ -295,6 +305,11 @@ public class BattleManager : MonoBehaviour
             enemyCurrentPhyHealth -= finalPhy;
             enemyCurrentMenHealth -= finalMen;
 
+            if (finalPhy > 0 || finalMen > 0)
+            {
+                RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnAttack);
+            }
+
             // 限制血量不低于 0 (可选，但这有利于 UI 显示)
             if (enemyCurrentPhyHealth < 0) enemyCurrentPhyHealth = 0;
             if (enemyCurrentMenHealth < 0) enemyCurrentMenHealth = 0;
@@ -313,13 +328,6 @@ public class BattleManager : MonoBehaviour
                 yield return new WaitForSeconds(1.0f);
                 ChangeState(BattleState.Win);
                 yield break;
-            }
-
-            int shieldGain = potManager.cookingPot.Count;
-            if (shieldGain > 0)
-            {
-                playerHealthStars.AddShield(shieldGain);
-                FloatingHint.Instance.ShowHint($"获得 {shieldGain} 点护盾！");
             }
         }
 
@@ -354,6 +362,10 @@ public class BattleManager : MonoBehaviour
             float phyDamage = CalculateDamage(card.phyDamage, card.tags, enemy);
             //计算精神伤害
             float menDamage = CalculateDamage(card.menDamage, card.tags, enemy);
+
+            //应用力量加成
+            phyDamage += basePlayerStrength;
+            menDamage += basePlayerStrength;
 
             //执行双倍伤害效果
             if (doubleStapleDamage && !card.tags.Contains(TagType.Seasoning))
@@ -451,6 +463,11 @@ public class BattleManager : MonoBehaviour
     #region EndTurn
     private void RoundEnd()
     {
+        if (potManager.cookingPot.Count > 0)
+        {
+            potManager.AddDirectPressure(10f); //增加 10% 压力
+            FloatingHint.Instance.ShowHint("锅内余热：压力+10%");
+        }
         ChangeState(BattleState.EnemyTurn);
     }
 
@@ -460,15 +477,7 @@ public class BattleManager : MonoBehaviour
     #region Win&Lose
     private void WinTurn()
     {
-        float baseReward = Random.Range(minGoldReward, maxGoldReward + 1);
-        int finalReward = Mathf.RoundToInt(baseReward * enemyStatMultiplier);
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.AddGold(finalReward);
-        }
-
-        FloatingHint.Instance.ShowHint($"战斗胜利！获得 {finalReward} 金币");
-        Debug.Log($"Battle Won. Reward: {baseReward} * {enemyStatMultiplier} = {finalReward}");
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.PostBattle);
         playerHealthStars.ClearShield();
         FindObjectOfType<MapManager>().FinishCurrentNode();
         

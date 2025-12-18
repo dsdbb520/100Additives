@@ -178,7 +178,7 @@ public class DeckManager : MonoBehaviour
     {
         if ( battleManager.currentState == BattleManager.BattleState.PlayerTurn )
         {
-            battleManager.ChangeState(BattleManager.BattleState.EnemyTurn);
+            battleManager.ChangeState(BattleManager.BattleState.EndTurn);
         }
     }
 

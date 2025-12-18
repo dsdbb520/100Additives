@@ -21,6 +21,7 @@ public class PotManager : MonoBehaviour
     public Image potPressureFill;
     public Image extraPotPressureFill;
     public Image extraExtraPotPressureFill;
+    public Image previewPressureFill;
     public Sprite Green, Yellow, Red;
     public TextMeshProUGUI pressureNum;
     public Transform potPanel;
@@ -177,6 +178,35 @@ public class PotManager : MonoBehaviour
             extraExtraPotPressureFill.gameObject.SetActive(true);
         }else
             extraExtraPotPressureFill.gameObject.SetActive(false);
+
+        //计算预览压力
+        if (previewPressureFill != null)
+        {
+            float projectedAdd = 0f;
+
+            foreach (var c in cookingPot)
+            {
+                if (fxManager != null)
+                {
+                    projectedAdd += fxManager.GetOnServePressurePrediction(c);
+                }
+            }
+
+            float finalProjectedPressure = totalPressure + projectedAdd;
+
+            //更新预览条
+            previewPressureFill.fillAmount = finalProjectedPressure / 200f;
+
+            if (Mathf.Abs(projectedAdd) > 0.1f)
+            {
+                previewPressureFill.gameObject.SetActive(true);
+
+                if (finalProjectedPressure > 100f && totalPressure <= 100f)
+                {
+                    //TODO：加一些视觉警告
+                }
+            }
+        }
         return totalPressure;
     }
 

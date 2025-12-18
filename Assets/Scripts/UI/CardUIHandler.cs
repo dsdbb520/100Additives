@@ -10,6 +10,7 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public TextMeshProUGUI cardNameText;   // 显示卡牌名称
     public TextMeshProUGUI costText;       // 显示卡牌费用
     public Image cardIcon;                 // 显示卡牌图标
+    public bool isInteractive = true;
     private bool isDragging = false;
     private PotManager potManager;
     private HandManager handManager;
@@ -70,6 +71,10 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     }
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (!isInteractive)
+        {
+            return;
+        }
         if (HandManager.isFrozenMode && transform.parent == handManager.handPanel)
         {
             if (cardData.isFrozen) UnfreezeCard();
@@ -84,6 +89,10 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (!isInteractive)
+        {
+            return;
+        }
         if (cardData.isUnplayable)
         {
             FloatingHint.Instance.ShowHint("这张牌无法打出！");
@@ -201,7 +210,14 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             return Vector3.zero; //或者其他大小
         }
-
+        //如果在商店里
+        if (GetComponentInParent<ShopSlotUI>() != null)
+        {
+            if (transform.parent == GetComponentInParent<ShopSlotUI>().cardSpawnPoint)
+            {
+                return new Vector3(0.8f, 0.8f, 1f);
+            }
+        }
         //默认情况，基准大小是 1.0
         return Vector3.one;
     }

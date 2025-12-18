@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588ab353f0eee4e4486194fe8fff53ad, type: 3}
+  m_Name: "\u5077\u6765\u7684\u5916\u5356"
+  m_EditorClassIdentifier: 
+  cardName: "\u5077\u6765\u7684\u5916\u5356"
+  icon: {fileID: -215870352, guid: 91453ef6dfa2896479c7d9dcc1fe12e3, type: 3}
+  rarity: 0
+  description: "<color=#00FFFF><b>\u3010\u901F\u98DF\u3011</b></color>\u83B7\u5F97<color=red>
+    8 </color>\u70B9\u62A4\u76FE\uFF0C\u62BD<color=red> 1 </color>\u5F20\u724C\u3002\r\n<size=75%><color=#CCCCCC><i>\u8FD8\u662F\u70ED\u4E4E\u7684\uFF01</i></color></size>\r\n"
+  cost: 1
+  tags: 
+  targetType: 1
+  isUnplayable: 0
+  exhaustOnPlay: 0
+  phyDamage: 0
+  menDamage: 0
+  selfDamage: 0
+  shieldValue: 0
+  healValue: 0
+  pressure: 0
+  specialEffectID: StolenTakeout
+  isFrozen: 0

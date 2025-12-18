@@ -40,6 +40,33 @@ public class SpecialEffectManager : MonoBehaviour
         }
     }
 
+    public float GetOnServePressurePrediction(CardData card)
+    {
+        if (string.IsNullOrEmpty(card.specialEffectID)) return 0f;
+
+        switch (card.specialEffectID)
+        {
+            case "SnailNoodle": return 20f; //ÂİòÏ·Û
+            case "BeefBall": return 15f;    //ÈöÄòÅ£Íè
+            case "GhostPepper": return 25f; //Ä§¹íÀ±½·
+            case "DryIce": return -20f;     //¸É±ù
+            case "WellingtonSlipper": return 5f; //»İÁé¶ÙÍÏĞ¬
+            case "SmileMadness": return 30f; //º¬Ğ¦°ë²½ñ²
+            case "RedUmbrella": return 15f;  //ºìÉ¡É¡
+            case "Intestine": return 10f;    //¾Å×ª´ó³¦
+
+            case "SpicyBase": //ÂéÀ±ÌÌ»ùµ×
+                int spicyCount = potManager.CountTagsInPot(TagType.Spicy);
+                return spicyCount * 10f;
+
+            case "CompressedBiscuit": //Ñ¹Ëõ±ı¸É
+                if (potManager.GetTotalPressure() < 50f) return 5f;
+                return 0f;
+
+            default: return 0f;
+        }
+    }
+
     /// <summary>
     /// Ö´ĞĞÌØÊâĞ§¹û
     /// </summary>
@@ -255,10 +282,11 @@ public class SpecialEffectManager : MonoBehaviour
                 break;
 
 
-            case "Coke": //±ùÀ«Âä£º»Ø3HP
+            case "Coke": //±ùÀ«Âä£º»Ø3HP£¬¼õ5Ñ¹
                 if (isSmallStove)
                 {
                     playerHealth.Heal(3);
+                    potManager.AddDirectPressure(-5f);
                 }
                 break;
 

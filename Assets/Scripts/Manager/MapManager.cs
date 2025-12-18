@@ -17,6 +17,7 @@ public class MapManager : MonoBehaviour
     public GameObject globalHUD;
     public RestManager restManager;
     public DeckManager deckManager;
+    public ShopManager shopManager;
     public CardData rottenLeafCard;
 
     [Header("UI控制")]
@@ -212,6 +213,30 @@ public class MapManager : MonoBehaviour
         FillRingWithWeights(ringNodes[2], 2);
         FillRingWithWeights(ringNodes[3], 3);
         FillRingWithWeights(ringNodes[4], 4);
+
+        //统计当前地图上所有的商店数量
+        int shopCount = mapGrid.Values.Count(n => n.type == NodeType.Shop);
+        int minShops = 2;
+
+        if (shopCount < minShops)
+        {
+            Debug.Log($"生成时商店不足 ({shopCount}个)，正在强制补充...");
+            List<MapNode> candidates = new List<MapNode>();
+            candidates.AddRange(ringNodes[2].Where(n => n.type == NodeType.Battle));
+            candidates.AddRange(ringNodes[3].Where(n => n.type == NodeType.Battle));
+            candidates = ShuffleList(candidates);
+
+            //补充商店直到满足最小数量
+            int needed = minShops - shopCount;
+            for (int i = 0; i < needed; i++)
+            {
+                if (i < candidates.Count)
+                {
+                    candidates[i].type = NodeType.Shop;
+                    Debug.Log($"已将节点 {candidates[i].coordinates} 强制转换为 Shop");
+                }
+            }
+        }
 
         //特殊放置: 3个主菜食材 (覆盖掉刚才生成的)
         //则: 距离 3-4-5，尽量分散。这里先用简易版：
@@ -522,9 +547,15 @@ public class MapManager : MonoBehaviour
             restManager.OpenRestSite();
             FinishCurrentNode();
         }
+        else if (node.type == NodeType.Shop) // ▼▼▼ 修改商店逻辑 ▼▼▼
+        {
+            mapPanel.SetActive(false);
+
+            shopManager.OpenShop();
+        }
         else
         {
-            //商店、事件等
+            //事件
             FloatingHint.Instance.ShowHint($"正在探索 {node.type}...");
             yield return new WaitForSeconds(1.0f);
             FinishCurrentNode();
@@ -558,7 +589,7 @@ public class MapManager : MonoBehaviour
 
     public void FinishCurrentNode()
     {
-        //点结算通用逻辑
+        //结算通用逻辑
         if (playerCurrentNode != null)
         {
             playerCurrentNode.isExplored = true;
