@@ -145,6 +145,29 @@ public class DeckManager : MonoBehaviour
         }
     }
 
+
+    public void UpgradeRandomCards(int count)
+    {
+        //从主牌库中筛选出可以升级的牌
+        //TODO：替换为加强版CardData
+        List<CardData> candidates = allCards.FindAll(c => c.rarity != CardRarity.Curse);
+
+        if (candidates.Count == 0) return;
+
+        int upgradeCount = 0;
+        while (upgradeCount < count && candidates.Count > 0)
+        {
+            int idx = Random.Range(0, candidates.Count);
+            CardData card = candidates[idx];
+
+            Debug.Log($"升级了卡牌：{card.cardName}");
+            FloatingHint.Instance.ShowHint($"卡牌 {card.cardName} 获得了强化！");
+
+            candidates.RemoveAt(idx);
+            upgradeCount++;
+        }
+    }
+
     public void DrawStapleCards(int count)
     {
         StartCoroutine(DrawStapleCardsCoroutine(count));

@@ -69,7 +69,15 @@ public class TooltipUI : MonoBehaviour
     {
         //¸³ÖµÎÄ±¾
         if (string.IsNullOrEmpty(header) && string.IsNullOrEmpty(content)) return;
-        headerText.text = header;
+        if (string.IsNullOrEmpty(header))
+        {
+            headerText.gameObject.SetActive(false);
+        }
+        else
+        {
+            headerText.gameObject.SetActive(true);
+            headerText.text = header;
+        }
         contentText.text = content;
 
         canvasGroup.DOKill();

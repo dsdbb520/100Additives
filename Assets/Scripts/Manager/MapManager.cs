@@ -483,10 +483,6 @@ public class MapManager : MonoBehaviour
                 Debug.LogError("烂菜叶卡牌数据未配置，或 DeckManager 丢失！");
             }
         }
-        else
-        {
-            FloatingHint.Instance.ShowHint("正常移动");
-        }
 
         playerCurrentNode = targetNode;
         UpdateVisibility();
@@ -547,18 +543,18 @@ public class MapManager : MonoBehaviour
             restManager.OpenRestSite();
             FinishCurrentNode();
         }
-        else if (node.type == NodeType.Shop) // ▼▼▼ 修改商店逻辑 ▼▼▼
+        else if (node.type == NodeType.Shop)
         {
             mapPanel.SetActive(false);
 
             shopManager.OpenShop();
         }
-        else
+        else if (node.type == NodeType.Event)
         {
-            //事件
-            FloatingHint.Instance.ShowHint($"正在探索 {node.type}...");
-            yield return new WaitForSeconds(1.0f);
-            FinishCurrentNode();
+            mapPanel.SetActive(false);
+
+            EventManager.Instance.StartRandomEvent();
+
         }
 
         isProcessing = false;

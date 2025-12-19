@@ -51,8 +51,9 @@ public class BattleManager : MonoBehaviour
     [Header("难度设置")]
     public float enemyStatMultiplier = 1.0f;  //敌人属性倍率（为难度系统做铺垫）
 
-    [Header("玩家基础数值")]
-    public float basePlayerStrength;
+    [Header("基础数值")]
+    public float basePlayerStrength = 0f;
+    public float initialPotPressure = 0f;
 
     [Header("组件赋值")]
     public Button RetryButton;
@@ -119,7 +120,14 @@ public class BattleManager : MonoBehaviour
 
         if (playerHealthStars != null) playerHealthStars.ClearShield();
         if (handManager != null) handManager.DiscardAllCard(true);
-        if (potManager != null) { potManager.ClearPot(); potManager.UpdateTotalPressure(); potManager.ClearPot(); }
+        potManager.ClearPot();
+
+        //应用初始压力
+        if (initialPotPressure > 0)
+        {
+            potManager.AddDirectPressure(initialPotPressure);
+            initialPotPressure = 0;
+        }
         if (deckManager != null) deckManager.ResetDeck();
 
         currentEnemy = null;
