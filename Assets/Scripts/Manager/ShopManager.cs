@@ -187,10 +187,8 @@ public class ShopManager : MonoBehaviour
             item.isSold = true;
 
             //加入玩家牌库
-            deckManager.allCards.Add(item.cardData.Clone());
+            deckManager.ObtainCard(item.cardData.Clone());
             deckManager.UpdateCardCountDisplay();
-
-            FloatingHint.Instance.ShowHint($"购买成功！{item.cardData.cardName} 加入了牌组");
 
             ShopSlotUI slotUI = slotObj.GetComponent<ShopSlotUI>();
             if (slotUI != null)

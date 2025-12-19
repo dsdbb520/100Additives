@@ -112,12 +112,13 @@ public class BattleRewardUI : MonoBehaviour
     {
         if (cardsPickedCount >= maxPickCount) return;
 
-        //加入牌库
-        deckManager.allCards.Add(card.Clone());
-        deckManager.UpdateCardCountDisplay();
-
         //视觉反馈
         FloatingHint.Instance.ShowHint($"选择了：{card.cardName}");
+
+        //加入牌库
+        deckManager.ObtainCard(card.Clone());
+        deckManager.UpdateCardCountDisplay();
+
 
         cardObj.GetComponent<Button>().interactable = false;
         cardObj.transform.DOScale(0, 0.2f);

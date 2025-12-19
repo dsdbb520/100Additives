@@ -131,6 +131,20 @@ public class DeckManager : MonoBehaviour
         }
     }
 
+
+    public void ObtainCard(CardData card)
+    {
+        allCards.Add(card);
+
+        if (BattleManager.Instance != null && BattleManager.Instance.currentState != BattleManager.BattleState.GameStart)
+        {
+            drawPile.Add(card.Clone());
+            Shuffle();
+            UpdateCardCountDisplay();
+            FloatingHint.Instance.ShowHint($"{card.cardName} 已加入牌组！");
+        }
+    }
+
     public void DrawStapleCards(int count)
     {
         StartCoroutine(DrawStapleCardsCoroutine(count));

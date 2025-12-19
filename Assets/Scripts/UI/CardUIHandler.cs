@@ -232,6 +232,11 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             return new Vector3(0.8f, 0.8f, 1f);
         }
+        //如果是背包
+        if (transform.parent.name == "Content")
+        {
+            return new Vector3(0.8f, 0.8f, 1f);
+        }
         //默认情况，基准大小是 1.0
         return Vector3.one;
     }

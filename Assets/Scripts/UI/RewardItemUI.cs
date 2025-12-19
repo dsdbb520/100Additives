@@ -66,7 +66,6 @@ public class RewardItemUI : MonoBehaviour
     public void SetClaimed()
     {
         button.interactable = false;
-        text.text += " (已领取)";
         text.color = Color.gray;
         //如果是金币，领取后直接变成灰色不可点
         //如果是卡牌，等选完牌后再调用这个
