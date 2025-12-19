@@ -505,9 +505,15 @@ public class BattleManager : MonoBehaviour
 
     private void LoseTurn()
     {
-        FloatingHint.Instance.ShowHint("ªÒµ√ ß∞‹£°");
         playerHealthStars.ClearShield();
-        FindObjectOfType<MapManager>().FinishCurrentNode();
+        if (VictoryUI.Instance != null)
+        {
+            VictoryUI.Instance.ShowDefeatScreen();
+        }
+        else
+        {
+            FindObjectOfType<MapManager>().FinishCurrentNode();
+        }
     }
 
     #endregion

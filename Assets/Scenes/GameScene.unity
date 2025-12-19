@@ -2583,6 +2583,8 @@ MonoBehaviour:
   victoryPanel: {fileID: 1861347276}
   mainMenuButton: {fileID: 812855941}
   quitButton: {fileID: 2041802482}
+  titleText: {fileID: 1144053971}
+  victoryImage: {fileID: 0}
   mainMenuSceneName: MainMenuScene
 --- !u!1 &358987975
 GameObject:
@@ -13025,9 +13027,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c16ed6d6d52de6544bc89140a3302436, type: 2}
   - {fileID: 11400000, guid: e3771ad76c4804444a053139b7892f8f, type: 2}
   - {fileID: 11400000, guid: e3771ad76c4804444a053139b7892f8f, type: 2}
-  - {fileID: 11400000, guid: 8abc8352d8410fc4cadeeb200ddbda7a, type: 2}
-  - {fileID: 11400000, guid: e5cbc64a0703f9c42bf125627eb1b415, type: 2}
-  - {fileID: 11400000, guid: 8c2fd2fbfd3156f4590caea00626d6a5, type: 2}
+  - {fileID: 11400000, guid: 86f47c976e2809c4097926b362f18bc0, type: 2}
+  - {fileID: 11400000, guid: 86f47c976e2809c4097926b362f18bc0, type: 2}
+  - {fileID: 11400000, guid: 86f47c976e2809c4097926b362f18bc0, type: 2}
+  - {fileID: 11400000, guid: 86f47c976e2809c4097926b362f18bc0, type: 2}
+  - {fileID: 11400000, guid: ec1814f73732011469067119bd9aaeef, type: 2}
+  - {fileID: 11400000, guid: ec1814f73732011469067119bd9aaeef, type: 2}
+  - {fileID: 11400000, guid: c16ed6d6d52de6544bc89140a3302436, type: 2}
+  - {fileID: 11400000, guid: c16ed6d6d52de6544bc89140a3302436, type: 2}
+  - {fileID: 11400000, guid: e3771ad76c4804444a053139b7892f8f, type: 2}
+  - {fileID: 11400000, guid: e3771ad76c4804444a053139b7892f8f, type: 2}
   battleManager: {fileID: 943227393}
   potManager: {fileID: 1637432151}
 --- !u!1 &1861347276

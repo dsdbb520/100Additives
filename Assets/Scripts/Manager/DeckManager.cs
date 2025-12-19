@@ -12,7 +12,7 @@ public class DeckManager : MonoBehaviour
     public HandManager handManager;  // 引用手牌管理器，用于将卡牌添加到手牌
     public TextMeshProUGUI drawPileText;    // 牌库数量文本
     public TextMeshProUGUI discardPileText; // 弃牌堆数量文本
-    public int DrawNumber = 3;   // 玩家摸牌数量
+    public int DrawNumber = 7;   // 玩家摸牌数量
     public Button openFireButton;
     public Button RoundEndButton;
 

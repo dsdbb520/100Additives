@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
-using DG.Tweening; // 引入 DOTween
+using DG.Tweening;
+using TMPro;
 
 public class VictoryUI : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class VictoryUI : MonoBehaviour
     public GameObject victoryPanel;
     public Button mainMenuButton;   //回到主菜单
     public Button quitButton;       //退出游戏
+    public TextMeshProUGUI titleText;
+    public GameObject victoryImage; 
 
     [Header("配置")]
     public string mainMenuSceneName = "MainMenuScene";
@@ -34,6 +37,9 @@ public class VictoryUI : MonoBehaviour
     {
         victoryPanel.SetActive(true);
 
+        if (titleText != null) titleText.text = "黑暗料理界制霸！";
+        if (victoryImage != null) victoryImage.SetActive(true);
+
         victoryPanel.transform.localScale = Vector3.zero;
         victoryPanel.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack);
 
@@ -45,6 +51,19 @@ public class VictoryUI : MonoBehaviour
         //}
 
         FloatingHint.Instance.ShowHint("恭喜通关！你是真正的黑暗料理之王！");
+    }
+
+    public void ShowDefeatScreen()
+    {
+        victoryPanel.SetActive(true);
+
+        if (titleText != null) titleText.text = "菜做糊了！";
+        if (victoryImage != null) victoryImage.SetActive(false);
+
+        victoryPanel.transform.localScale = Vector3.zero;
+        victoryPanel.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack);
+
+        FloatingHint.Instance.ShowHint("胜败乃兵家常事，请大侠重新来过！");
     }
 
     void OnMainMenuClicked()
