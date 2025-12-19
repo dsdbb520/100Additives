@@ -5,7 +5,10 @@ using System.Collections.Generic;
 using TMPro;
 using DG.Tweening;
 using System.Linq;
+
+#if UNITY_EDITOR
 using UnityEditor.Experimental.GraphView;
+#endif
 
 public class MapManager : MonoBehaviour
 {

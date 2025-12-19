@@ -161,6 +161,10 @@ public class EnemyActionManager : MonoBehaviour
                 playerHealth.TakeDamage(finalDamage);
 
                 FloatingHint.Instance.ShowHint($"ÊÜµ½ {finalDamage} µãÉËº¦£¡");
+                if (strengthBuff > 0)
+                {
+                    strengthBuff = 0;
+                }
                 break;
 
             case EnemyIntentType.Defend:

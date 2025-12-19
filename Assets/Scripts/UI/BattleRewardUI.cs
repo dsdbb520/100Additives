@@ -160,6 +160,15 @@ public class BattleRewardUI : MonoBehaviour
         cardDraftPanel.SetActive(false);
 
         //结算节点
-        mapManager.FinishCurrentNode();
+        if (BattleManager.Instance.isBossBattle)
+        {
+            //如果是Boss战胜利，直接通关
+            VictoryUI.Instance.ShowVictoryScreen();
+        }
+        else
+        {
+            //如果是普通/精英战斗，正常结算节点
+            FindObjectOfType<MapManager>().FinishCurrentNode();
+        }
     }
 }
