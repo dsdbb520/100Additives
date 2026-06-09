@@ -13,6 +13,13 @@ public enum TagType
     Curse
 }
 
+public enum ItemType
+{
+    Card,
+    Relic,
+    Position
+}
+
 public enum CardRarity
 {
     Common,    //ÆÕÍ¨£¨°×£©

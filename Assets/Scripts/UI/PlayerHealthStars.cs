@@ -105,9 +105,19 @@ public class PlayerHealthStars : MonoBehaviour
     }
     public void Heal(float amount)
     {
-        currentHealth += amount;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        float predictedHealth = currentHealth + amount;
+        float overflow = 0;
+
+        if (predictedHealth > maxHealth)
+        {
+            overflow = predictedHealth - maxHealth;
+        }
+        currentHealth = Mathf.Clamp(predictedHealth, 0, maxHealth);
         UpdateHealthStars();
+        if (overflow > 0)
+        {
+            RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnHeal, overflow);
+        }
     }
 
 }

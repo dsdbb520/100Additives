@@ -122,6 +122,8 @@ public class HandManager : MonoBehaviour
                 break; //找到一个就停，防止删错
             }
         }
+
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnExhaust, card);
     }
 
     public int GetFrozenCardCount()

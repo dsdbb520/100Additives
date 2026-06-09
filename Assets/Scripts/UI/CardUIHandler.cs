@@ -7,6 +7,7 @@ using DG.Tweening;
 public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public CardData cardData;  // 绑定卡牌数据
+    public RelicData relicData; //绑定遗物数据
     public TextMeshProUGUI cardNameText;   // 显示卡牌名称
     public TextMeshProUGUI costText;       // 显示卡牌费用
     public Image cardIcon;                 // 显示卡牌图标
@@ -22,15 +23,9 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     void Start()
     {
         // 初始化卡牌UI数据
-        if (cardData != null)
+        if (cardData != null && relicData == null)
         {
-            cardNameText.text = cardData.cardName;
-            costText.text = cardData.cost.ToString();
-            cardIcon.sprite = cardData.icon;
-        }
-        if (cardNameText != null)
-        {
-            cardNameText.color = RarityUtils.GetColor(cardData.rarity);
+            InitCard(cardData);
         }
 
         potManager = FindObjectOfType<PotManager>();
@@ -41,22 +36,71 @@ public class CardUIHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
     }
 
-    
+    public void InitCard(CardData data)
+    {
+        cardData = data;
+        relicData = null;
+
+        if (cardNameText != null)
+        {
+            cardNameText.text = data.cardName;
+            cardNameText.color = RarityUtils.GetColor(data.rarity);
+        }
+        if (costText != null)
+        {
+            costText.text = data.cost.ToString();
+            if (costText.transform.parent != null) costText.transform.parent.gameObject.SetActive(true);
+            else costText.gameObject.SetActive(true);
+        }
+        if (cardIcon != null) cardIcon.sprite = data.icon;
+    }
+
+    public void InitRelic(RelicData data)
+    {
+        relicData = data;
+        cardData = null;
+
+        //设置基础信息
+        if (cardNameText != null)
+        {
+            cardNameText.text = data.relicName;
+            cardNameText.color = RarityUtils.GetColor(data.rarity);
+        }
+
+        if (cardIcon != null) cardIcon.sprite = data.icon;
+
+        if (costText != null)
+        {
+            if (costText.transform.parent != null && costText.transform.parent != transform)
+                costText.transform.parent.gameObject.SetActive(false);
+            else
+                costText.gameObject.SetActive(false);
+        }
+
+        isInteractive = false;
+    }
+
+
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         Vector3 targetScale = GetBaseScale() * 1.1f; //相对放大10%
         transform.DOScale(targetScale, 0.2f);
-        if (TooltipUI.Instance != null && !cardData.isFrozen)
+        if (TooltipUI.Instance != null)
         {
-
-            //拼接富文本标题
-            string hexColor = RarityUtils.GetColorHex(cardData.rarity);
-            string header = $"<color={hexColor}>{cardData.cardName}</color>";
-
-            //显示Tooltip
-            string content = cardData.description;
-            TooltipUI.Instance.Show(header, content);
+            if (cardData != null && !cardData.isFrozen)
+            {
+                string hexColor = RarityUtils.GetColorHex(cardData.rarity);
+                string header = $"<color={hexColor}>{cardData.cardName}</color>";
+                TooltipUI.Instance.Show(header, cardData.description);
+            }
+            else if (relicData != null)
+            {
+                // 遗物 Tooltip
+                // 这里简单处理颜色，或者你也给 RarityUtils 加个 GetRelicColorHex
+                string header = relicData.relicName;
+                TooltipUI.Instance.Show(header, relicData.description);
+            }
         }
     }
 

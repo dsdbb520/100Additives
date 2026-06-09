@@ -1,13 +1,6 @@
 using UnityEngine;
 
-public enum RelicRarity
-{
-    Common,
-    Rare,
-    Boss,
-    Shop,
-    Special
-}
+
 
 [CreateAssetMenu(fileName = "NewRelic", menuName = "Relic Data")]
 public class RelicData : ScriptableObject
@@ -17,7 +10,7 @@ public class RelicData : ScriptableObject
     public string relicName;    //显示名称
     public Sprite icon;         //图标
     [TextArea] public string description; //描述
-    public RelicRarity rarity;  //稀有度
+    public CardRarity rarity;  //稀有度
 
     [Header("数值参数 (可选)")]
     //一些简单的数值可以直接配在这里

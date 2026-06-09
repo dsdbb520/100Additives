@@ -288,7 +288,7 @@ public class BattleManager : MonoBehaviour
                 }
                 else
                 {
-                    int selfDamage = 1 + Mathf.FloorToInt(excess / 10f);
+                    int selfDamage = 5 + Mathf.FloorToInt(excess / 5f);
                     playerHealthStars.TakeDamage(selfDamage);
                     FloatingHint.Instance.ShowHint($"炸锅了！玩家受到{selfDamage}点伤害！");
                 }
@@ -303,50 +303,50 @@ public class BattleManager : MonoBehaviour
 
         if (!isExplosion)
         {
-            
+            RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnServeSuccess);
+        }
 
-            // 计算伤害
-            var (finalPhy, finalMen) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
+        // 计算伤害
+        var (finalPhy, finalMen) = CalculateTotalDamage(potManager.cookingPot, currentEnemy);
 
-            //执行吸血逻辑
-            if (lifestealActive)
+        //执行吸血逻辑
+        if (lifestealActive)
+        {
+            float totalDmg = finalPhy + finalMen;
+            int healAmount = Mathf.FloorToInt(totalDmg * 0.5f);
+            if (healAmount > 0)
             {
-                float totalDmg = finalPhy + finalMen;
-                int healAmount = Mathf.FloorToInt(totalDmg * 0.5f);
-                if (healAmount > 0)
-                {
-                    playerHealthStars.Heal(healAmount);
-                    FloatingHint.Instance.ShowHint($"吸血：恢复{healAmount}点HP");
-                }
-                lifestealActive = false; //已生效
+                playerHealthStars.Heal(healAmount);
+                FloatingHint.Instance.ShowHint($"吸血：恢复{healAmount}点HP");
             }
-            enemyCurrentPhyHealth -= finalPhy;
-            enemyCurrentMenHealth -= finalMen;
+            lifestealActive = false; //已生效
+        }
+        enemyCurrentPhyHealth -= finalPhy;
+        enemyCurrentMenHealth -= finalMen;
 
-            if (finalPhy > 0 || finalMen > 0)
-            {
-                RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnAttack);
-            }
+        if (finalPhy > 0 || finalMen > 0)
+        {
+            RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnAttack);
+        }
 
-            // 限制血量不低于 0 (可选，但这有利于 UI 显示)
-            if (enemyCurrentPhyHealth < 0) enemyCurrentPhyHealth = 0;
-            if (enemyCurrentMenHealth < 0) enemyCurrentMenHealth = 0;
+        // 限制血量不低于 0 (可选，但这有利于 UI 显示)
+        if (enemyCurrentPhyHealth < 0) enemyCurrentPhyHealth = 0;
+        if (enemyCurrentMenHealth < 0) enemyCurrentMenHealth = 0;
 
-            // 刷新 UI
-            FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(
-                enemyCurrentPhyHealth / enemyMaxPhyHealth,
-                enemyCurrentMenHealth / enemyMaxMenHealth
-            );
+        // 刷新 UI
+        FindObjectOfType<EnemyHealthSlider>().UpdateHealthBars(
+            enemyCurrentPhyHealth / enemyMaxPhyHealth,
+            enemyCurrentMenHealth / enemyMaxMenHealth
+        );
 
-            FloatingHint.Instance.ShowHint($"造成了：物理伤害 {finalPhy} | 精神伤害 {finalMen}");
+        FloatingHint.Instance.ShowHint($"造成了：物理伤害 {finalPhy} | 精神伤害 {finalMen}");
 
-            // 判断胜利条件：任意一条血归零
-            if (enemyCurrentPhyHealth <= 0 || enemyCurrentMenHealth <= 0)
-            {
-                yield return new WaitForSeconds(1.0f);
-                ChangeState(BattleState.Win);
-                yield break;
-            }
+        // 判断胜利条件：任意一条血归零
+        if (enemyCurrentPhyHealth <= 0 || enemyCurrentMenHealth <= 0)
+        {
+            yield return new WaitForSeconds(1.0f);
+            ChangeState(BattleState.Win);
+            yield break;
         }
 
         yield return new WaitForSeconds(1.0f);

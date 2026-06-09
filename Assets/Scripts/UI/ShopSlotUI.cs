@@ -20,35 +20,47 @@ public class ShopSlotUI : MonoBehaviour
     {
         currentItem = item;
 
-        //生成卡牌展示
+        //生成展示对象
+        foreach (Transform child in cardSpawnPoint) Destroy(child.gameObject);
         if (cardPrefab != null && cardSpawnPoint != null)
         {
-            //实例化并重置位置
             cardObj = Instantiate(cardPrefab, cardSpawnPoint);
+
+            //重置位置
             cardObj.transform.localPosition = Vector3.zero;
             cardObj.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
             RectTransform cardRect = cardObj.GetComponent<RectTransform>();
             if (cardRect != null)
             {
                 cardRect.anchoredPosition = Vector2.zero;
-                //确保对齐方式是居中
                 cardRect.anchorMin = new Vector2(0.5f, 0.5f);
                 cardRect.anchorMax = new Vector2(0.5f, 0.5f);
                 cardRect.pivot = new Vector2(0.5f, 0.5f);
             }
 
-            //初始化卡牌数据
+            //初始化数据
             CardUIHandler handler = cardObj.GetComponent<CardUIHandler>();
-            handler.cardData = item.cardData; //赋值数据
-            //禁用拖拽，只用于展示
-            handler.isInteractive = false;
+            if (handler != null)
+            {
+                if (item.type == ItemType.Card)
+                {
+                    //如果是卡牌
+                    handler.InitCard(item.cardData);
+                }
+                else if (item.type == ItemType.Relic)
+                {
+                    //如果是遗物
+                    handler.InitRelic(item.relicData);
+                }
+                handler.isInteractive = false;
+            }
         }
 
         //显示价格
         priceText.text = item.finalPrice.ToString();
         if (item.isDiscounted)
         {
-            priceText.color = Color.green; //打折价格变绿
+            priceText.color = Color.green;
             discountBadge.SetActive(true);
         }
         else
@@ -57,7 +69,7 @@ public class ShopSlotUI : MonoBehaviour
             discountBadge.SetActive(false);
         }
 
-        //状态
+        //状态更新
         UpdateSoldState();
 
         //绑定按钮

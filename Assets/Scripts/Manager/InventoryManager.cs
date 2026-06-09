@@ -10,6 +10,7 @@ public class InventoryManager : MonoBehaviour
     [Header("UI面板")]
     public GameObject inventoryPanel;
     public Button closeButton;
+    public bool isOpened;
 
     [Header("按钮")]
     public Button deckTabButton;
@@ -57,6 +58,8 @@ public class InventoryManager : MonoBehaviour
 
     public void OpenInventory()
     {
+        if (isOpened) return;
+        isOpened = true;
         inventoryPanel.SetActive(true);
         //默认打开卡组页
         ShowDeckTab();
@@ -64,6 +67,7 @@ public class InventoryManager : MonoBehaviour
 
     public void CloseInventory()
     {
+        isOpened = false;
         inventoryPanel.SetActive(false);
     }
 
@@ -104,7 +108,7 @@ public class InventoryManager : MonoBehaviour
         ResetTabs();
         relicContent.SetActive(true);
         relicTabButton.image.color = selectedTabColor;
-
+        RefreshRelicDisplay();
         //刷新遗物
     }
 
@@ -140,6 +144,30 @@ public class InventoryManager : MonoBehaviour
 
             //稍微缩小一点，方便排列
             cardObj.transform.localScale = Vector3.one * 0.8f;
+        }
+    }
+
+    void RefreshRelicDisplay()
+    {
+        //清空
+        foreach (Transform child in relicGridParent) Destroy(child.gameObject);
+
+        //获取遗物列表
+        if (RelicManager.Instance == null) return;
+        List<RelicData> relics = RelicManager.Instance.ownedRelics;
+
+        //生成展示
+        foreach (RelicData relic in relics)
+        {
+            GameObject relicObj = Instantiate(cardPrefab, relicGridParent);
+
+            CardUIHandler handler = relicObj.GetComponent<CardUIHandler>();
+            if (handler != null)
+            {
+                handler.InitRelic(relic); //调用InitRelic
+            }
+
+            relicObj.transform.localScale = Vector3.one * 0.8f;
         }
     }
 }

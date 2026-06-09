@@ -27,16 +27,13 @@ public class SmallStoveManager : MonoBehaviour
         UpdateUsageUI();
     }
 
-    //检查是否还能用
-    public bool CanUseStove()
-    {
-        return currentUsage < maxUsagePerTurn;
-    }
-
     //处理卡牌放入小灶
     public bool AddCardToStove(CardData card, GameObject cardObj)
     {
-        if (!CanUseStove())
+        int limit = maxUsagePerTurn;
+        if (RelicManager.Instance.HasRelic("DualHotpot")) limit += 1;
+
+        if (currentUsage >= limit)
         {
             FloatingHint.Instance.ShowHint("小灶每回合只能用 3 次！");
             return false;
@@ -47,10 +44,18 @@ public class SmallStoveManager : MonoBehaviour
             return false;
         }
 
+        if (RelicManager.Instance.HasRelic("DualHotpot") && currentUsage == 0)
+        {
+            FindObjectOfType<BattleManager>().currentEnergy += card.cost;
+            FindObjectOfType<BattleManager>().UpdateEnergyUI();
+            FloatingHint.Instance.ShowHint("鸳鸯锅：首张免单！");
+        }
+
         currentUsage++;
         UpdateUsageUI();
         ApplyCardEffect(card);
         SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, true, EffectTriggerPhase.OnAdd);
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnPutIntoStove, card);
 
         //视觉效果
         cardObj.transform.SetParent(stovePanel);

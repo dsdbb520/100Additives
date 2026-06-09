@@ -11,7 +11,13 @@ public enum RelicTriggerType
     OnAttack,        //造成伤害时
     OnPlayerHurt,    //玩家受伤时
     OnDraw,          //抽牌时
-    PostBattle       //战斗结算后
+    PostBattle,      //战斗结算后
+    OnPutIntoPot,    //放入大锅时
+    OnPutIntoStove,  //放入小灶时
+    OnServeSuccess,  //上菜成功时
+    OnObtainCard,    //获得卡牌时
+    OnExhaust,       //消耗卡牌时
+    OnHeal
 }
 
 public class RelicManager : MonoBehaviour
@@ -25,11 +31,15 @@ public class RelicManager : MonoBehaviour
     public Transform relicBarContainer; //存放遗物图标的父物体
     public GameObject relicIconPrefab;  //遗物图标预制体
 
+    public bool returnNow = false;
+
     //引用其他管理器
     private BattleManager battleManager;
     private DeckManager deckManager;
     private PlayerHealthStars playerHealth;
     private EnemyActionManager enemyManager;
+    public PotManager potManager;
+    public SmallStoveManager stoveManager;
 
     private void Awake()
     {
@@ -77,72 +87,161 @@ public class RelicManager : MonoBehaviour
     {
         switch (relic.relicID)
         {
-            //示例：草莓 (获得时最大生命+5)
-            case "Strawberry":
-                if (type == RelicTriggerType.OnObtain)
-                {
-                    playerHealth.maxHealth += 5;
-                    playerHealth.Heal(5);
-                    FloatingHint.Instance.ShowHint("草莓：最大生命 +5");
-                }
-                break;
-
-            //示例：金刚杵 (战斗开始时，力量+1)
-            case "Vajra":
+            //太奶的老花镜: 战斗开始基础压力降低10
+            case "GrandmaGlasses":
                 if (type == RelicTriggerType.BattleStart)
                 {
-                    // 我们需要在 BattleManager 加一个 baseDamageBonus 变量
-                    battleManager.basePlayerStrength += 1;
-                    FloatingHint.Instance.ShowHint("金刚杵：力量 +1");
+                    potManager.AddDirectPressure(-10f);
+                    FloatingHint.Instance.ShowHint("老花镜：大锅压力降低！");
                 }
                 break;
 
-            //示例：招财猫 (战斗胜利金币+10)
-            case "LuckyCat":
-                if (type == RelicTriggerType.PostBattle)
+            //不锈钢铁碗: 每次放入小灶，护盾+3
+            case "SteelBowl":
+                if (type == RelicTriggerType.OnPutIntoStove)
                 {
-                    CurrencyManager.Instance.AddGold(10);
-                    FloatingHint.Instance.ShowHint("招财猫：额外金币 +10");
+                    playerHealth.AddShield(3);
+                    FloatingHint.Instance.ShowHint("铁碗：护盾+3");
                 }
                 break;
 
-            //示例：双截棍 (造成伤害时，10%概率额外造成10点伤害)
-            case "Nunchaku":
-                if (type == RelicTriggerType.OnAttack)
+            //备用打火机: 每场战斗第一回合，燃气+1
+            case "SpareLighter":
+                if (type == RelicTriggerType.BattleStart)
                 {
-                    if (Random.value < 0.1f) //10% 概率
+                    battleManager.currentEnergy += 1;
+                    battleManager.UpdateEnergyUI();
+                    FloatingHint.Instance.ShowHint("打火机：燃气+1");
+                }
+                break;
+
+            //陈年包浆: 成功上菜，回2HP
+            case "AgedPatina":
+                if (type == RelicTriggerType.OnServeSuccess)
+                {
+                    playerHealth.Heal(2);
+                    FloatingHint.Instance.ShowHint("陈年包浆：回血+2");
+                }
+                break;
+
+            //止吐手环: 获得烂菜叶时33%概率销毁
+            case "AntiVomit":
+                if (type == RelicTriggerType.OnObtainCard)
+                {
+                    CardData card = context as CardData;
+                    if (card != null && (card.cardName.Contains("烂菜叶") || card.cardName.Contains("泔水")))
                     {
-                        // 再次造成伤害
-                        battleManager.DealPhyDamageFromEffect(10);
-                        FloatingHint.Instance.ShowHint("双截棍触发！额外10伤！");
+                        if (Random.value < 0.33f)
+                        {
+                            deckManager.allCards.Remove(card);
+                            deckManager.UpdateCardCountDisplay();
+                            FloatingHint.Instance.ShowHint("止吐手环生效：销毁了垃圾牌！");
+                        }
+                    }
+                }
+                break;
+            //变态辣油: 放入【辣】牌，压力+10%，全场真伤5
+            case "ChiliOil":
+                if (type == RelicTriggerType.OnPutIntoPot)
+                {
+                    CardData card = context as CardData;
+                    if (card != null && card.tags.Contains(TagType.Spicy))
+                    {
+                        potManager.AddDirectPressure(10f);
+                        if(card.phyDamage>0) battleManager.DealPhyDamageFromEffect(5);
+                        if(card.menDamage>0) battleManager.DealMenDamageFromEffect(5);
+                        playerHealth.TakeDamage(5);
+                        FloatingHint.Instance.ShowHint("辣油触发：真伤5！");
                     }
                 }
                 break;
 
-            //示例：咖啡 (回合开始多抽1张)
-            case "Coffee":
-                if (type == RelicTriggerType.TurnStart)
+            //金刚假牙: 放入【硬】牌，伤害增加50%当前护盾
+            case "DiamondDentures":
+                if (type == RelicTriggerType.OnPutIntoPot)
                 {
-                    deckManager.DrawCard(1);
-                    FloatingHint.Instance.ShowHint("咖啡：精力充沛！");
+                    CardData card = context as CardData;
+                    if (card != null && card.tags.Contains(TagType.Hard))
+                    {
+                        int bonus = Mathf.FloorToInt(playerHealth.currentShield * 0.5f);
+                        card.phyDamage += bonus; //修改当前卡牌的伤害
+                        FloatingHint.Instance.ShowHint($"金刚假牙：伤害+{bonus}");
+                    }
                 }
+                break;
+
+            //陈年老卤: 放入【毒】牌，触发【入锅时】两次
+            case "AgedBrine":
+                if (type == RelicTriggerType.OnPutIntoPot)
+                {
+                    CardData card = context as CardData;
+                    if (card != null && card.tags.Contains(TagType.Toxic))
+                    {
+                        SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnAdd);
+                        FloatingHint.Instance.ShowHint("老卤：双倍入味！");
+                    }
+                }
+                break;
+
+            //工业搅拌机: 放入【液体】牌，抽2张
+            case "IndustrialMixer":
+                if (type == RelicTriggerType.OnPutIntoPot)
+                {
+                    CardData card = context as CardData;
+                    if (card != null && card.tags.Contains(TagType.Fluid))
+                    {
+                        deckManager.DrawCard(2);
+                        FloatingHint.Instance.ShowHint("搅拌机：抽2张");
+                    }
+                }
+                break;
+
+            //胰岛素泵: 治疗溢出转护盾
+            case "InsulinPump":
+                if (type == RelicTriggerType.OnHeal)
+                {
+                    // context 传入 {overflowAmount}
+                    if (context is float overflow && overflow > 0)
+                    {
+                        playerHealth.AddShield(overflow * 2);
+                        FloatingHint.Instance.ShowHint($"胰岛素泵：转化护盾 {overflow * 2}");
+                    }
+                }
+                break;
+
+            //沼气转化器: 消耗垃圾牌时，回费
+            case "BiogasConverter":
+                if (type == RelicTriggerType.OnExhaust)
+                {
+                    CardData card = context as CardData;
+                    if (card != null && (card.cardName.Contains("烂菜叶") || card.cardName.Contains("泔水")))
+                    {
+                        battleManager.currentEnergy += 1;
+                        battleManager.UpdateEnergyUI();
+                        FloatingHint.Instance.ShowHint("沼气转化：燃气+1");
+                    }
+                }
+                break;
+
+            //双槽鸳鸯锅: 小灶上限+1，首张0费
+            //这是一个被动效果，需要修改 SmallStoveManager
+            case "DualHotpot":
+                // 逻辑主要在 SmallStoveManager 里查询 HasRelic
                 break;
         }
     }
 
-    //有些遗物是被动生效的（比如最大燃气+1），不适合用Trigger，适合用查询
-
     public int GetMaxEnergyModifier()
     {
         int bonus = 0;
-        if (HasRelic("Battery")) bonus += 1; // 电池：燃气+1
+        if (HasRelic("Battery")) bonus += 1; //电池：燃气+1
         return bonus;
     }
 
     public float GetEnemyMaxHpMultiplier()
     {
         float multiplier = 1.0f;
-        if (HasRelic("ShrinkRay")) multiplier *= 0.8f; // 缩小射线：敌人血量上限变为 80%
+        if (HasRelic("ShrinkRay")) multiplier *= 0.8f; //缩小射线：敌人血量上限变为 80%
         return multiplier;
     }
 

@@ -7,7 +7,10 @@ using DG.Tweening;
 [System.Serializable]
 public class ShopItem
 {
+    public ItemType type;
     public CardData cardData;
+    public RelicData relicData;
+
     public int originalPrice;
     public int finalPrice;
     public bool isDiscounted; //是否半价
@@ -21,6 +24,16 @@ public class ShopItem
         finalPrice = discount ? basePrice / 2 : basePrice;
         isSold = false;
     }
+
+    public ShopItem(RelicData relic, int price)
+    {
+        type = ItemType.Relic;
+        relicData = relic;
+        originalPrice = price;
+        isDiscounted = false;
+        finalPrice = price;
+        isSold = false;
+    }
 }
 
 public class ShopManager : MonoBehaviour
@@ -29,6 +42,7 @@ public class ShopManager : MonoBehaviour
 
     [Header("配置")]
     public List<CardData> allCardsDatabase; //卡牌数据库
+    public List<RelicData> allRelicsDatabase;//遗物数据库
     public Transform shopPanel;             //商店面板
     public Transform itemsContainer;        //商品槽位父物体
     public GameObject shopSlotPrefab;       //商品槽位预制体
@@ -47,6 +61,8 @@ public class ShopManager : MonoBehaviour
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
         allCardsDatabase = Resources.LoadAll<CardData>("Cards").ToList();
+        allRelicsDatabase = Resources.LoadAll<RelicData>("Relics").ToList();
+
     }
 
     private void Start()
@@ -111,6 +127,22 @@ public class ShopManager : MonoBehaviour
             currentInventory.Add(new ShopItem(card, price, isDiscount));
         }
 
+
+        List<RelicData> availableRelics = allRelicsDatabase.FindAll(r => !RelicManager.Instance.HasRelic(r.relicID)); // 排除已拥有的
+
+        for (int i = 0; i < 2; i++)
+        {
+            if (availableRelics.Count == 0) break;
+            int idx = Random.Range(0, availableRelics.Count);
+            RelicData r = availableRelics[idx];
+
+            int price = GetRelicPrice(r.rarity);
+            currentInventory.Add(new ShopItem(r, price));
+
+            availableRelics.RemoveAt(idx);
+        }
+
+
         //刷新UI
         RefreshShopUI();
     }
@@ -141,6 +173,23 @@ public class ShopManager : MonoBehaviour
         else basePrice = Random.Range(120, 150); //防备万一有更高级的
 
         return basePrice;
+    }
+
+    int GetRelicPrice(CardRarity rarity)
+    {
+        switch (rarity)
+        {
+            case CardRarity.Common:
+                return 150;
+            case CardRarity.Uncommon:
+                return 250;
+            case CardRarity.Rare:
+                return 300;
+            case CardRarity.Special:
+                return 300;
+            default:
+                return 150;
+        }
     }
 
     //UI逻辑

@@ -72,6 +72,7 @@ public class PotManager : MonoBehaviour
         {
             SpecialEffectManager.Instance.ApplyEffect(card.specialEffectID, card, false, EffectTriggerPhase.OnAdd);
         }
+        RelicManager.Instance.TriggerAllRelics(RelicTriggerType.OnPutIntoPot, card);
     }
 
     //移除卡牌并添加回手牌
