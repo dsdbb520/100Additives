@@ -4,39 +4,39 @@ using System.Collections.Generic;
 [CreateAssetMenu(fileName = "CardData", menuName = "CardData")]
 public class CardData : ScriptableObject
 {
-    [Header("»ù±¾ĞÅÏ¢")]
+    [Header("åŸºæœ¬ä¿¡æ¯")]
     public string cardName;
     public Sprite icon;
-    public CardRarity rarity;   //Æ·ÖÊ
+    public CardRarity rarity;   //å“è´¨
     [TextArea] public string description;
 
-    [Header("²ÎÊı")]
+    [Header("å‚æ•°")]
     public int cost;
     public List<TagType> tags;
     public CardTargetType targetType;
-    public bool isUnplayable; //ÊÇ·ñÎŞ·¨´ò³ö
-    public bool exhaustOnPlay; //´ò³öºóÏûºÄ
+    public bool isUnplayable; //æ˜¯å¦æ— æ³•æ‰“å‡º
+    public bool exhaustOnPlay; //æ‰“å‡ºåæ¶ˆè€—
 
-    [Header("ÊıÖµ")]
-    // Çø·ÖÉËº¦ÀàĞÍ 
+    [Header("æ•°å€¼")]
+    // åŒºåˆ†ä¼¤å®³ç±»å‹ 
     public int phyDamage;
     public int menDamage;
-    public int selfDamage;   //¶ÔÍæ¼ÒÔì³ÉµÄÉËº¦
+    public int selfDamage;   //å¯¹ç©å®¶é€ æˆçš„ä¼¤å®³
     public int shieldValue;
     public int healValue;
     public int pressure;
 
-    [Header("ÌØÊâĞ§¹û")]
-    //ÓÃÓÚ´¦Àí¸÷ÖÖĞ§¹û
+    [Header("ç‰¹æ®Šæ•ˆæœ")]
+    //ç”¨äºå¤„ç†å„ç§æ•ˆæœ
     public string specialEffectID;
 
 
     public bool isFrozen;
 
-    //¿ËÂ¡·½·¨£¬·µ»ØÒ»¸öĞÂµÄ¸±±¾
+    //å…‹éš†æ–¹æ³•ï¼Œè¿”å›ä¸€ä¸ªæ–°çš„å‰¯æœ¬
     public CardData Clone()
     {
-        CardData clone = Instantiate(this);  //¿ËÂ¡ScriptableObject
+        CardData clone = Instantiate(this);  //å…‹éš†ScriptableObject
         clone.cardName = this.cardName;
         clone.cost = this.cost;
         clone.rarity = this.rarity;
